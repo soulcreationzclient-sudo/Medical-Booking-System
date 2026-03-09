@@ -1,0 +1,168 @@
+/* ============================================
+   MEDICAL BOOKING SYSTEM - PREMIUM STYLES
+   Modern, Animated, Professional Healthcare Theme
+   ============================================ */
+
+/* ---------- CSS Variables ---------- */
+:root {
+  /* Brand (Blue) */
+  --primary: #1363C6;
+  --primary-dark: #0f52a5;
+  --primary-light: #3b82f6;
+
+  /* Make gradients also BLUE (so your UI stays consistent) */
+  --primary-gradient: linear-gradient(135deg, #1363C6 0%, #1363C6 100%);
+  --primary-gradient-hover: linear-gradient(135deg, #0f52a5 0%, #0f52a5 100%);
+
+  /* Secondary (keep simple, optional) */
+  --secondary: #1363C6;
+  --secondary-dark: #0f52a5;
+  --secondary-gradient: linear-gradient(135deg, #1363C6 0%, #1363C6 100%);
+
+  /* Accent (same blue) */
+  --accent: #1363C6;
+  --accent-light: #5aa7ff;
+  --accent-gradient: linear-gradient(135deg, #1363C6 0%, #1363C6 100%);
+
+  /* Healthcare Colors (you can keep these) */
+  --medical-blue: #1363C6;
+  --medical-teal: #14b8a6;
+  --medical-green: #22c55e;
+  --medical-red: #ef4444;
+
+  /* Status Colors (keep) */
+  --success: #10b981;
+  --success-light: #34d399;
+  --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --warning: #f59e0b;
+  --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --danger: #ef4444;
+  --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --info: #1363C6;
+  --info-gradient: linear-gradient(135deg, #1363C6 0%, #1363C6 100%);
+
+  /* Neutral Colors */
+  --dark: #1e293b;
+  --dark-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  --gray-900: #0f172a;
+  --gray-800: #1e293b;
+  --gray-700: #334155;
+  --gray-600: #475569;
+  --gray-500: #64748b;
+  --gray-400: #94a3b8;
+  --gray-300: #cbd5e1;
+  --gray-200: #e2e8f0;
+  --gray-100: #f1f5f9;
+  --gray-50: #f8fafc;
+  --white: #ffffff;
+
+  /* Shadows (update glow to match brand blue) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --shadow-glow: 0 0 40px rgba(19, 99, 198, 0.35);
+  --shadow-glow-accent: 0 0 40px rgba(19, 99, 198, 0.35);
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Font */
+  --font-sans: "Open Sans", sans-serif;
+}
+
+html, body,
+button, input, select, textarea {
+  font-family: var(--font-sans) !important;
+}
+
+
+/* ---------- Keyframe Animations ---------- */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(5deg); }
+}
+
+@keyframes floatReverse {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(20px) rotate(-5deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.4); }
+  50% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.8); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInDown {
+  from { opacity: 0; transform: translateY(-30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.1); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.1); }
+  70% { transform: scale(1); }
+}
+
+@keyframes wave {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(10px) translateY(-5px); }
+  50% { transform: translateX(0) translateY(0); }
+  75% { transform: translateX(-10px) translateY(5px); }
+}
+
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(102, 126, 234, 0.5); }
+  50% { border-color: rgba(118, 75, 162, 0.8); }
+}

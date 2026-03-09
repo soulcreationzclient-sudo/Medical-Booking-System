@@ -1,0 +1,58 @@
+/* ========================================
+   SHADOW (SUBTLE, PROFESSIONAL)
+   ======================================== */
+.shadow {
+    box-shadow: 0 4px 14px rgba(19, 99, 198, 0.15);
+}
+
+/* ========================================
+   ADD BUTTON – MEDICAL PRIMARY
+   ======================================== */
+.add-btn {
+    background-color: #1363C6;          /* same as login */
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;                 /* match login radius */
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+
+    box-shadow: 0 6px 16px rgba(19, 99, 198, 0.35);
+    transition: all 0.25s ease;
+}
+
+/* Hover */
+.add-btn:hover {
+    background-color: #0f52a5;          /* login hover blue */
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(19, 99, 198, 0.45);
+}
+
+/* Active */
+.add-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(19, 99, 198, 0.3);
+}
+
+/* Focus */
+.add-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(19, 99, 198, 0.25);
+}
+
+/* ========================================
+   IMAGE LOAD PREVIEW
+   ======================================== */
+.img_load {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+}
