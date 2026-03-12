@@ -508,227 +508,467 @@
     <p>Showing {{ $booking_list->count() }} records</p>
 </div>
 
-{{--  SEARCH / FILTER --}}
-<div class="search-box">
-<form method="GET">
-    <div class="search-row">
-        <input type="date"
-               name="date"
-               value="{{ request('date') }}"
-               class="form-control"
-               style="max-width:200px"
-               placeholder="Select Date">
 
-        <select name="filter" class="form-control" style="max-width:240px">
-            <option value="">Default (Pending + Today)</option>
-            <option value="today" {{ request('filter')=='today'?'selected':'' }}>Today</option>
-            <option value="unverified" {{ request('filter')=='unverified'?'selected':'' }}>Unverified</option>
-            <option value="pending" {{ request('filter')=='pending'?'selected':'' }}>Pending</option>
-            <option value="accepted" {{ request('filter')=='accepted'?'selected':'' }}>Accepted (Last 20)</option>
-            <option value="rejected" {{ request('filter')=='rejected'?'selected':'' }}>Rejected (Last 20)</option>
-            <option value="cancelled" {{ request('filter')=='cancelled'?'selected':'' }}>Cancelled (Last 20)</option>
-            <option value="no_show" {{ request('filter')=='no_show'?'selected':'' }}>No Show (Last 20)</option>
-            <option value="rescheduled" {{ request('filter')=='rescheduled'?'selected':'' }}>Rescheduled (Last 20)</option>
-            <option value="completed" {{ request('filter')=='completed'?'selected':'' }}>Completed (Last 20)</option>
-        </select>
+<!-- Add booking statistics cards here -->
 
-        <button class="btn btn-primary">Search</button>
-        <a href="{{ route('doctor.overall_bookings') }}" class="btn btn-secondary">Reset</a>
+
+{{--  📊 COMPACT KPI STATISTICS BAR --}}
+<style>
+.kpi-stats-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0 0 18px 0;
+    padding: 0;
+    max-width: 1150px;
+    width: 100%;
+}
+.kpi-chip {
+    display: flex;
+    align-items: center;
+    height: 38px;
+    border-radius: 999px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    padding: 0 18px 0 14px;
+    font-size: 0.97rem;
+    font-weight: 500;
+    min-width: 144px;
+    box-shadow: none;
+    line-height: 1.2;
+    gap: 9px;
+    margin-bottom: 0;
+}
+.kpi-chip-label {
+    font-size: 0.91em;
+    color: #475569;
+    margin-right: 6px;
+    font-weight: 500;
+    letter-spacing: .01em;
+}
+.kpi-chip-count {
+    font-size: 1.08em;
+    font-weight: 700;
+    color: #1e293b;
+    margin-left: auto;
+    letter-spacing: .02em;
+}
+.kpi-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+.kpi-dot--gray { background: #cbd5e1; }
+.kpi-dot--orange { background: #f59e42; }
+.kpi-dot--green { background: #22c55e; }
+.kpi-dot--blue { background: #3b82f6; }
+.kpi-dot--red { background: #ef4444; }
+@media (max-width: 860px) {
+    .kpi-stats-bar {
+        gap: 9px;
+        max-width: 100%;
+    }
+    .kpi-chip {
+        min-width: 136px;
+        font-size: .96rem;
+        padding: 0 13px 0 11px;
+    }
+}
+@media (max-width: 600px) {
+    .kpi-stats-bar {
+        gap: 7px;
+        margin-bottom: 14px;
+    }
+    .kpi-chip {
+        min-width: 115px;
+        font-size: .95rem;
+        padding: 0 8px 0 8px;
+    }
+}
+</style>
+<div class="kpi-stats-bar">
+    <div class="kpi-chip">
+        <span class="kpi-dot kpi-dot--gray"></span>
+        <span class="kpi-chip-label">Total</span>
+        <span class="kpi-chip-count">{{ $booking_list->count() }}</span>
     </div>
-</form>
+    <div class="kpi-chip">
+        <span class="kpi-dot kpi-dot--orange"></span>
+        <span class="kpi-chip-label">Pending</span>
+        <span class="kpi-chip-count">{{ $booking_list->where('status','pending')->count() }}</span>
+    </div>
+    <div class="kpi-chip">
+        <span class="kpi-dot kpi-dot--green"></span>
+        <span class="kpi-chip-label">Accepted</span>
+        <span class="kpi-chip-count">{{ $booking_list->where('status','accepted')->count() }}</span>
+    </div>
+    <div class="kpi-chip">
+        <span class="kpi-dot kpi-dot--blue"></span>
+        <span class="kpi-chip-label">Completed</span>
+        <span class="kpi-chip-count">{{ $booking_list->where('status','completed')->count() }}</span>
+    </div>
+    <div class="kpi-chip">
+        <span class="kpi-dot kpi-dot--red"></span>
+        <span class="kpi-chip-label">Rejected / No Show</span>
+        <span class="kpi-chip-count">{{ $booking_list->whereIn('status', ['rejected', 'no_show'])->count() }}</span>
+    </div>
+</div>
+
+{{--  FILTER TABS + SEARCH  --}}
+<div class="search-box">
+    <form method="GET">
+        <div class="search-row">
+            <input type="date"
+                   name="date"
+                   value="{{ request('date') }}"
+                   class="form-control"
+                   style="max-width:200px"
+                   placeholder="Select Date">
+
+            <select name="filter" class="form-control" style="max-width:240px">
+                <option value="">Default (Pending + Today)</option>
+                <option value="today" {{ request('filter')=='today'?'selected':'' }}>Today</option>
+                <option value="unverified" {{ request('filter')=='unverified'?'selected':'' }}>Unverified</option>
+                <option value="pending" {{ request('filter')=='pending'?'selected':'' }}>Pending</option>
+                <option value="accepted" {{ request('filter')=='accepted'?'selected':'' }}>Accepted (Last 20)</option>
+                <option value="rejected" {{ request('filter')=='rejected'?'selected':'' }}>Rejected (Last 20)</option>
+                <option value="cancelled" {{ request('filter')=='cancelled'?'selected':'' }}>Cancelled (Last 20)</option>
+                <option value="no_show" {{ request('filter')=='no_show'?'selected':'' }}>No Show (Last 20)</option>
+                <option value="rescheduled" {{ request('filter')=='rescheduled'?'selected':'' }}>Rescheduled (Last 20)</option>
+                <option value="completed" {{ request('filter')=='completed'?'selected':'' }}>Completed (Last 20)</option>
+            </select>
+
+            <button class="btn btn-primary">Search</button>
+            <a href="{{ route('doctor.overall_bookings') }}" class="btn btn-secondary">Reset</a>
+        </div>
+    </form>
 </div>
 
 {{-- 📋 BOOKINGS --}}
 @if($booking_list->count())
-<div class="booking-grid">
-@foreach($booking_list as $booking)
-<div class="booking-card">
+<style>
+/* --- SaaS/Stripe-like Compact Dashboard Table --- */
+.saas-table-wrap {
+  width: 100%;
+  max-width: 1150px;
+  margin: 0 auto 36px auto;
+  overflow-x: auto;
+  background: transparent;
+}
+.saas-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  font-size: 0.98rem;
+  box-shadow: 0 2px 10px 0 rgba(30,58,138,.02), 0 .5px 1px #64748b10;
+}
+.saas-table th, .saas-table td {
+  padding: 0.38rem 0.75rem;
+  vertical-align: middle;
+  white-space: nowrap;
+  border: none;
+}
+.saas-table th {
+  position: sticky;
+  top: 0;
+  z-index: 11;
+  background: #fff;
+  font-weight: 600;
+  font-size: 0.97rem;
+  color: #263347;
+  border-bottom: 1.5px solid #e5e7eb;
+  letter-spacing: 0.01em;
+  text-align: left;
+}
+.saas-table tbody tr {
+  height: 56px;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.saas-table tbody tr:hover {
+  background: #f8fafc;
+}
+.saas-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #e9effb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2960a8;
+  font-weight: 700;
+  font-size: 1.10rem;
+  margin-right: 12px;
+  flex-shrink: 0;
+  user-select: none;
+  letter-spacing: 1px;
+}
+.saas-patient-stack {
+  display: flex;
+  align-items: center;
+  gap: 0.66rem;
+}
+.saas-patient-details {
+  display: flex;
+  flex-direction: column;
+}
+.saas-name-bold {
+  font-weight: 600;
+  font-size: 1.01rem;
+  color: #111927;
+}
+.saas-email-muted {
+  font-size: 0.88rem;
+  color: #7c8899;
+  font-weight: 400;
+  margin-top: 1px;
+  letter-spacing: 0.01em;
+}
+.saas-badge {
+  border-radius: 9999px;
+  padding: 0.14em 0.95em;
+  font-size: 0.93rem;
+  font-weight: 500;
+  line-height: 1.25;
+  display: inline-block;
+  text-align: center;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  border: none;
+  min-width: 78px;
+  text-transform: capitalize;
+  box-shadow: none;
+}
+.saas-badge.pending    { background: #fdf6d7; color: #b8861b; }
+.saas-badge.accepted   { background: #e6fbe9; color: #1a9250;}
+.saas-badge.completed  { background: #e5eeff; color: #3261cb;}
+.saas-badge.rejected   { background: #fee2e2; color: #cb2d2b;}
+.saas-badge.no_show    { background: #f0eafd; color: #845afd;}
+.saas-badge.cancelled  { background: #f1f5f9; color: #757575;}
+.saas-badge.rescheduled{ background: #eaf0fc; color: #3b4295;}
+.saas-badge.unverified { background: #fdf6d7; color: #b8861b;}
+.saas-actions-cell {
+  position: relative;
+  min-width: 48px;
+  text-align: right;
+}
+/* Dropdown actions - visible always when row's actions column is "active" or hovered. Otherwise, only the 3 dots shown. */
+.saas-dropdown-actions-row {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  align-items: center;
+}
 
-<div class="card-top">
-    <div>
-        <div class="date-box">
-            <div>{{ \Carbon\Carbon::parse($booking->booking_date)->format('d') }}</div>
-            <small>{{ \Carbon\Carbon::parse($booking->booking_date)->format('M Y') }}</small>
-        </div>
-        <strong>{{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }}</strong>
-    </div>
+.saas-dropdown-btn {
+  background: #f5f8fa;
+  color: #295dc2;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 11px;
+  font-size: 0.94rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .13s, color .13s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38em;
+  outline: none;
+}
+.saas-dropdown-btn.accept    { background: #e6fbe9; color: #16a34a; }
+.saas-dropdown-btn.reject    { background: #fee2e2; color: #cb2d2b; }
+.saas-dropdown-btn.resched   { background: #eaf0fc; color: #3b4295; }
+.saas-dropdown-btn.noshow    { background: #f0eafd; color: #845afd;}
+.saas-dropdown-btn.complete  { background: #def6e3; color: #1a9250;}
+.saas-dropdown-btn:disabled,
+.saas-dropdown-btn[aria-disabled="true"] { opacity: 0.47; pointer-events: none; }
 
-    <span class="status-badge {{ $booking->status }}">
-        {{ ucfirst(str_replace('_', ' ', $booking->status)) }}
-    </span>
-</div>
+.saas-actions-cell .saas-three-dot-btn,
+.saas-actions-cell .saas-dropdown-btns-wrap {
+  display: none;
+}
 
-<div class="card-body">
-    <div class="patient-row">
-        <div class="patient-avatar">
-            {{ strtoupper(substr($booking->patient_name,0,1)) }}
-        </div>
-        <div>
-            <strong>{{ $booking->patient_name }}</strong><br>
-            <small>{{ $booking->patient_email }}</small>
-        </div>
-    </div>
+.saas-actions-cell.active .saas-dropdown-btns-wrap,
+.saas-actions-cell:focus-within .saas-dropdown-btns-wrap,
+.saas-actions-cell.show-dropdown .saas-dropdown-btns-wrap,
+.saas-actions-cell:hover .saas-dropdown-btns-wrap {
+  display: flex !important;
+}
 
-    <div class="info-chip">📞 {{ $booking->patient_phone }}</div>
-    <div class="info-chip">👤 {{ $booking->age }} yrs</div><br>
-    <div class="info-chip">📋 {{ $booking->cause }}</div>
+.saas-actions-cell.active .saas-three-dot-btn,
+.saas-actions-cell:focus-within .saas-three-dot-btn,
+.saas-actions-cell.show-dropdown .saas-three-dot-btn,
+.saas-actions-cell:hover .saas-three-dot-btn {
+  display: none !important;
+}
 
+.saas-actions-cell .saas-three-dot-btn {
+  background: none;
+  border: none;
+  outline: none;
+  padding: 8px 6px;
+  font-size: 1.43rem;
+  color: #788195;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background .14s;
+  vertical-align: middle;
+  display: inline-block;
+}
+.saas-actions-cell .saas-three-dot-btn:hover {
+  background: #f1f5f9;
+  color: #293859;
+}
+.saas-actions-cell:not(.active):not(:hover):not(.show-dropdown):not(:focus-within) .saas-three-dot-btn {
+  display: inline-block;
+}
 
-   @if($booking->status === 'pending')
-    {{-- PENDING: Accept, Reject, Reschedule --}}
-    <div class="action-btns">
-        <button class="btn-action btn-accept"
-            onclick="updateStatus({{ $booking->id }}, 'accepted')">
-            ✅ Accept
-        </button>
-        <button class="btn-action btn-reject"
-            onclick="updateStatus({{ $booking->id }}, 'rejected')">
-            ❌ Reject
-        </button>
-        <button class="btn-action btn-reschedule"
-            onclick="openRescheduleModal({{ $booking->id }}, '{{ $booking->patient_name }}', '{{ $booking->booking_date }}', '{{ $booking->start_time }}')">
-            📅 Reschedule
-        </button>
-    </div>
+/* Actions column left-aligned, never changes on hover */
+.saas-table th:last-child,
+.saas-table td.saas-actions-cell,
+.saas-table td:last-child {
+  text-align: left !important;
+}
 
-@elseif($booking->status === 'accepted')
-    {{-- ACCEPTED: Reschedule, No Show, Reject, Completed --}}
-    <div class="approved-msg" style="background: #ecfdf5; color: #047857;">
-        ✅ Booking Accepted
-        <br><br>
-        <div class="action-btns">
-            <button class="btn-action btn-reschedule"
-                onclick="openRescheduleModal({{ $booking->id }}, '{{ $booking->patient_name }}', '{{ $booking->booking_date }}', '{{ $booking->start_time }}')">
-                📅 Reschedule
-            </button>
-            <button class="btn-action btn-noshow"
+/* Prevent shift on hover for actions column cell */
+.saas-actions-cell {
+  text-align: left !important;
+}
+
+@media (max-width: 940px) {
+  .saas-table { font-size: 0.95rem; min-width: 680px; }
+}
+@media (max-width: 600px) {
+  .saas-table-wrap { max-width: 100vw; }
+  .saas-table { font-size: 0.93rem; min-width: 540px;}
+  .saas-table th, .saas-table td {padding: .36rem 0.48rem;}
+}
+</style>
+
+<div class="saas-table-wrap">
+  <table class="saas-table">
+    <thead>
+      <tr>
+        <th style="min-width:170px;">Patient</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Phone</th>
+        <th>Age</th>
+        <th>Symptoms</th>
+        <th>Status</th>
+        <th style="min-width:68px;text-align:left;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      @foreach($booking_list as $booking)
+      @php
+        $statusClass = match($booking->status) {
+          'pending'    => 'pending',
+          'accepted'   => 'accepted',
+          'completed'  => 'completed',
+          'rejected'   => 'rejected',
+          'no_show'    => 'no_show',
+          'cancelled'  => 'cancelled',
+          'rescheduled'=> 'rescheduled',
+          'unverified' => 'unverified',
+          default      => 'pending'
+        };
+        $nameInitial = strtoupper(substr($booking->patient_name,0,1));
+        // Status
+        $status = $booking->status;
+      @endphp
+      <tr>
+        {{-- Patient --}}
+        <td>
+          <div class="saas-patient-stack">
+            <div class="saas-avatar">{{ $nameInitial }}</div>
+            <div class="saas-patient-details">
+              <span class="saas-name-bold">{{ $booking->patient_name }}</span>
+              <span class="saas-email-muted">{{ $booking->patient_email }}</span>
+            </div>
+          </div>
+        </td>
+        {{-- Date --}}
+        <td>{{ \Carbon\Carbon::parse($booking->booking_date)->format('M d') }}</td>
+        {{-- Time --}}
+        <td>{{ \Carbon\Carbon::parse($booking->start_time)->format('h:i A') }}</td>
+        {{-- Phone --}}
+        <td>{{ $booking->patient_phone }}</td>
+        {{-- Age --}}
+        <td>{{ $booking->age }} yrs</td>
+        {{-- Symptoms --}}
+        <td>{{ $booking->cause }}</td>
+        {{-- Status --}}
+        <td>
+          <span class="saas-badge {{ $statusClass }}">
+            {{ ucfirst(str_replace('_', ' ', $booking->status)) }}
+          </span>
+        </td>
+        {{-- Actions (Always show compact dropdown buttons per requirements) --}}
+        <td class="saas-actions-cell" tabindex="0">
+          <div class="saas-dropdown-btns-wrap saas-dropdown-actions-row">
+            @if(in_array($status, ['pending','rejected','no_show','cancelled','unverified']))
+              <button class="saas-dropdown-btn accept" 
+                title="Accept"
+                onclick="updateStatus({{ $booking->id }}, 'accepted')">
+                &#10003; Accept
+              </button>
+            @endif
+            @if(in_array($status, ['pending','accepted','rescheduled','unverified']))
+              <button class="saas-dropdown-btn reject" 
+                title="Reject"
+                onclick="updateStatus({{ $booking->id }}, 'rejected')">
+                &#10005; Reject
+              </button>
+            @endif
+            @if(in_array($status, ['pending','accepted','rejected','no_show','cancelled']))
+              <button class="saas-dropdown-btn resched" 
+                title="Reschedule"
+                onclick="openRescheduleModal(
+                  {{ $booking->id }}, 
+                  '{{ addslashes($booking->patient_name) }}',
+                  '{{ $booking->booking_date }}',
+                  '{{ $booking->start_time }}')">
+                &#8635; Reschedule
+              </button>
+            @endif
+            @if(in_array($status, ['accepted','rescheduled']))
+              <button class="saas-dropdown-btn noshow" 
+                title="Mark No Show"
                 onclick="updateStatus({{ $booking->id }}, 'no_show')">
-                🚫 No Show
-            </button>
-            <button class="btn-action btn-reject"
-                onclick="updateStatus({{ $booking->id }}, 'rejected')">
-                ❌ Reject
-            </button>
-            <button class="btn-action btn-completed"
+                &#9888; No Show
+              </button>
+              <button class="saas-dropdown-btn complete"
+                title="Mark Complete"
                 onclick="updateStatus({{ $booking->id }}, 'completed')">
-                ✔️ Completed
-            </button>
-        </div>
-    </div>
-
-@elseif($booking->status === 'rejected')
-    {{-- REJECTED: Accept, Reschedule --}}
-    <div class="rejected-msg" style="background: #fef2f2; color: #b91c1c;">
-        ❌ Booking Rejected
-        <br><br>
-        <div class="action-btns">
-            <button class="btn-action btn-accept"
-                onclick="updateStatus({{ $booking->id }}, 'accepted')">
-                ✅ Accept
-            </button>
-            <button class="btn-action btn-reschedule"
-                onclick="openRescheduleModal({{ $booking->id }}, '{{ $booking->patient_name }}', '{{ $booking->booking_date }}', '{{ $booking->start_time }}')">
-                📅 Reschedule
-            </button>
-        </div>
-    </div>
-
-@elseif($booking->status === 'no_show')
-    {{-- NO SHOW: Accept, Reschedule --}}
-    <div class="rejected-msg" style="background: #f3f4f6; color: #4b5563;">
-        🚫 Patient No Show
-        <br><br>
-        <div class="action-btns">
-            <button class="btn-action btn-accept"
-                onclick="updateStatus({{ $booking->id }}, 'accepted')">
-                ✅ Accept
-            </button>
-            <button class="btn-action btn-reschedule"
-                onclick="openRescheduleModal({{ $booking->id }}, '{{ $booking->patient_name }}', '{{ $booking->booking_date }}', '{{ $booking->start_time }}')">
-                📅 Reschedule
-            </button>
-        </div>
-    </div>
-
-@elseif($booking->status === 'rescheduled')
-    {{-- RESCHEDULED: Completed, No Show, Reject --}}
-    <div class="approved-msg" style="background: #eff6ff; color: #1d4ed8;">
-        📅 Booking Rescheduled
-        <br><br>
-        <div class="action-btns">
-            <button class="btn-action btn-completed"
-                onclick="updateStatus({{ $booking->id }}, 'completed')">
-                ✔️ Completed
-            </button>
-            <button class="btn-action btn-noshow"
-                onclick="updateStatus({{ $booking->id }}, 'no_show')">
-                🚫 No Show
-            </button>
-            <button class="btn-action btn-reject"
-                onclick="updateStatus({{ $booking->id }}, 'rejected')">
-                ❌ Reject
-            </button>
-        </div>
-    </div>
-
-@elseif($booking->status === 'completed')
-    {{-- COMPLETED: Show only message, no buttons --}}
-    <div class="completed-msg" style="background: #d1fae5; color: #065f46;">
-        ✔️ Appointment Completed
-        <br>
-        <small style="margin-top: 8px; display: block; opacity: 0.8;">
-            This booking has been successfully completed
-        </small>
-    </div>
-
-@elseif($booking->status === 'cancelled')
-    {{-- CANCELLED: Accept, Reschedule --}}
-    <div class="rejected-msg" style="background: #f3f4f6; color: #374151;">
-        ⛔ Booking Cancelled
-        <br><br>
-        <div class="action-btns">
-            <button class="btn-action btn-accept"
-                onclick="updateStatus({{ $booking->id }}, 'accepted')">
-                ✅ Accept
-            </button>
-            <button class="btn-action btn-reschedule"
-                onclick="openRescheduleModal({{ $booking->id }}, '{{ $booking->patient_name }}', '{{ $booking->booking_date }}', '{{ $booking->start_time }}')">
-                📅 Reschedule
-            </button>
-        </div>
-    </div>
-
-@elseif($booking->status === 'unverified')
-    {{-- UNVERIFIED: Accept, Reject --}}
-    <div class="rejected-msg" style="background: #fef3c7; color: #92400e;">
-        ⚠️ Unverified Booking
-        <br><br>
-        <div class="action-btns">
-            <button class="btn-action btn-accept"
-                onclick="updateStatus({{ $booking->id }}, 'accepted')">
-                ✅ Accept
-            </button>
-            <button class="btn-action btn-reject"
-                onclick="updateStatus({{ $booking->id }}, 'rejected')">
-                ❌ Reject
-            </button>
-        </div>
-    </div>
-@endif
-
-</div>
-
-</div>
-@endforeach
+                &#10003; Complete
+              </button>
+            @endif
+            @if($status === 'completed')
+              <button class="saas-dropdown-btn complete" disabled aria-disabled="true" title="Completed" style="color:#58b670;background:#eafbee;">
+                &#10003; Completed
+              </button>
+            @endif
+          </div>
+          <button class="saas-three-dot-btn" tabindex="-1" aria-label="Actions">&#x22EF;</button>
+        </td>
+      </tr>
+      @endforeach
+    </tbody>
+  </table>
 </div>
 @else
-<div class="empty-state">
-    <h3>📭 No bookings found</h3>
-    <p>Try changing the filter or date.</p>
+<div class="empty-state" style="text-align:center;margin:60px 0 0;">
+  <h3 style="font-size:1.18rem;color:#64748b;font-weight:600;">📭 No bookings found</h3>
+  <p style="font-size:0.97rem;color:#9ca3af;">Try changing the filter or date.</p>
 </div>
 @endif
-
-</div>
 
 {{-- Reschedule Modal --}}
 <div id="rescheduleModal" class="modal">
