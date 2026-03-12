@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\PrescriptionController;
+use App\Http\Controllers\PatientController;
 
 Auth::routes();
 
@@ -84,3 +86,61 @@ Route::middleware(['auth','role:doctor'])->prefix('doctor')->name('doctor.')->gr
 Route::post('/test', [Superadmincontroller::class, 'test'])->name('test');
 Route::view('/book', 'boooking_form');
 
+// ── Add these lines to your routes/web.php ──
+
+// Patient pre-fill lookup (used by both forms via JS)
+Route::get('/booking/lookup-patient', [BookingController::class, 'lookupPatient'])
+    ->name('booking.lookup.patient');
+
+// Public booking store (already exists — ensure it calls ajaxStore)
+Route::post('/booking/{doctorId}', [BookingController::class, 'ajaxStore'])
+    ->name('booking.ajax.store');
+
+// Admin in-person booking store (already exists)
+Route::post('/hospital-admin/inperson', [BookingController::class, 'inPersonStore'])
+    ->name('hospital_admin.inperson')
+    ->middleware(['auth', 'hospital_admin']);
+
+// ── Add these inside your hospital_admin middleware/auth group in routes/web.php ──
+
+Route::get('/hospital-admin/patients/search', [PatientController::class, 'search'])
+    ->name('hospital_admin.patients.search');
+
+Route::get('/hospital-admin/patients/{id}', [PatientController::class, 'show'])
+    ->name('hospital_admin.patients.show');
+
+
+
+
+
+
+Route::get('/prescriptions/{bookingId}',         [PrescriptionController::class, 'show'])   ->name('prescriptions.show');
+Route::post('/prescriptions/{bookingId}',         [PrescriptionController::class, 'store'])  ->name('prescriptions.store');
+Route::put('/prescriptions/{id}',                 [PrescriptionController::class, 'update']) ->name('prescriptions.update');
+Route::delete('/prescriptions/{id}',              [PrescriptionController::class, 'destroy'])->name('prescriptions.destroy');
+Route::get('/prescriptions/{bookingId}/print',    [PrescriptionController::class, 'print'])  ->name('prescriptions.print');
+Route::get('/prescriptions/patient/{phone}',      [PrescriptionController::class, 'patientHistory'])->name('prescriptions.patient.history');
+
+
+// ── 2. In your overall_bookings blade, add a "Prescriptions" button per booking card ──
+// Find where the Accept/Reject/Reschedule buttons are and add this alongside them:
+
+/*
+<a href="{{ route('prescriptions.show', $booking->id) }}"
+   class="btn btn-sm"
+   style="background:#eff6ff;color:#1363C6;border:1px solid #bfdbfe;font-weight:600;border-radius:8px;padding:6px 14px">
+    💊 Prescriptions
+</a>
+*/
+
+
+// ── 3. In patient_show.blade.php, add a "View Prescription History" button ──
+// Find the booking history section header and add:
+
+/*
+<a href="{{ route('prescriptions.patient.history', $patient->phone_no) }}"
+   style="background:#eff6ff;color:#1363C6;padding:5px 14px;border-radius:8px;
+          font-size:13px;font-weight:600;text-decoration:none;">
+    💊 Prescription History
+</a>
+*/

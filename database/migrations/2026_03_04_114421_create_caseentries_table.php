@@ -6,33 +6,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('caseentries', function (Blueprint $table) {
-               $table->id();
+        Schema::create('case_entries', function (Blueprint $table) {  // ← fixed: was 'caseentries'
+            $table->id();
 
-    $table->foreignId('booking_id')->constrained('bookings')->cascadeOnDelete();
-    $table->foreignId('hospital_id')->constrained('hospitals')->cascadeOnDelete();
-    $table->foreignId('patient_id')->constrained('patients')->cascadeOnDelete();
-    $table->foreignId('doctor_id')->constrained('doctors')->cascadeOnDelete();
+            $table->foreignId('booking_id')->constrained('bookings')->cascadeOnDelete();
+            $table->foreignId('hospital_id')->constrained('hospitals')->cascadeOnDelete();
+            $table->foreignId('patient_id')->constrained('patients')->cascadeOnDelete();
+            $table->foreignId('doctor_id')->constrained('doctors')->cascadeOnDelete();
 
-    $table->text('complaints')->nullable();        // patient complaints
-    $table->text('examination')->nullable();       // physical examination
-    $table->text('diagnosis')->nullable();         // diagnosis
-    $table->text('notes')->nullable();             // additional doctor notes
+            $table->text('complaints')->nullable();
+            $table->text('examination')->nullable();
+            $table->text('diagnosis')->nullable();
+            $table->text('notes')->nullable();
 
-    $table->timestamps();
+            $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('caseentries');
+        Schema::dropIfExists('case_entries');  // ← fixed: was 'caseentries'
     }
 };

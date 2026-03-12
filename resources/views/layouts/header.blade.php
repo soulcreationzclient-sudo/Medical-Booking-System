@@ -46,11 +46,11 @@
 
         <!-- BRAND / ROLE -->
         <a class="navbar-brand d-flex align-items-center gap-3" href="#">
-    <span class="fw-bold">Speedbots.io</span>
-    <span class="fw-semibold">
-        {{ str_replace('_',' ', ucwords(auth()->user()->role)) }}
-    </span>
-</a>
+            <span class="fw-bold">Speedbots.io</span>
+            <span class="fw-semibold">
+                {{ str_replace('_',' ', ucwords(auth()->user()->role)) }}
+            </span>
+        </a>
 
         <!-- MOBILE TOGGLE -->
         <button class="navbar-toggler text-white"
@@ -86,7 +86,6 @@
                             Schedule
                         </a>
                     </li>
-
                 @endcan
 
                 {{-- SUPER ADMIN --}}
@@ -135,22 +134,30 @@
                             Specialization
                         </a>
                     </li>
-                     <li class="nav-item">
+
+                    <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('hospital_admin.inpersonform') ? 'active' : '' }}"
                            href="{{ route('hospital_admin.inpersonform') }}">
                             In person
                         </a>
                     </li>
 
-                    <!-- ✅ ADDED: OVERALL BOOKINGS -->
-
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('hospital_admin.*bookings*') ? 'active' : '' }}"
-                        href="{{route('hospital_admin.overall_bookings')}}">
+                           href="{{ route('hospital_admin.overall_bookings') }}">
                             Overall Bookings
                         </a>
                     </li>
+
+                    {{-- ✅ NEW: PATIENTS --}}
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('hospital_admin.patients*') ? 'active' : '' }}"
+                           href="{{ route('hospital_admin.patients.search') }}">
+                            Patients
+                        </a>
+                    </li>
                 @endcan
+
             </ul>
 
             <!-- USER / LOGOUT -->

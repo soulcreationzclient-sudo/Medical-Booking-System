@@ -877,6 +877,12 @@
     </div>
 @endif
 
+{{-- ✅ PRESCRIPTION BUTTON — shown on ALL statuses --}}
+<a href="{{ route('prescriptions.show', $booking->id) }}"
+   class="btn-prescription">
+    💊 Prescriptions
+</a>
+
 </div>
 
 </div>
