@@ -326,10 +326,19 @@
                 @csrf
                 <div class="form-grid-rx">
                     <div>
-                        <div class="fl">Medicine Name *</div>
-                        <input type="text" name="medicine_name" class="fi"
-                               placeholder="e.g. Paracetamol 500mg" required
-                               value="{{ old('medicine_name') }}">
+                        <div class="fl">Medicine *</div>
+
+                        <select name="medicine_id" id="medicine_select" class="fi" required>
+                            <option value="">Select Medicine</option>
+
+                            @foreach($medicines as $medicine)
+                                <option value="{{ $medicine->id }}"
+                                        data-price="{{ $medicine->price }}">
+                                    {{ $medicine->name }}
+                                </option>
+                            @endforeach
+
+                        </select>
                     </div>
                     <div>
                         <div class="fl">Dosage</div>
@@ -348,6 +357,13 @@
                         <input type="text" name="duration" class="fi"
                                placeholder="e.g. 5 days"
                                value="{{ old('duration') }}">
+                    </div>
+                    <div>
+                        <div class="fl">Price</div>
+                        <input type="text" name="price" id="medicine_price"
+                               class="fi"
+                               placeholder="Price will autofill"
+                               readonly>
                     </div>
                 </div>
                 <div class="form-grid-rx-full">
@@ -403,6 +419,7 @@
 </div>
 
 <script>
+    
 function openEdit(id, medicine, dosage, frequency, duration, instructions) {
     document.getElementById('edit_medicine').value     = medicine;
     document.getElementById('edit_dosage').value       = dosage;
@@ -418,6 +435,15 @@ function closeEdit() {
 // Close on backdrop click
 document.getElementById('editModal').addEventListener('click', function(e) {
     if (e.target === this) closeEdit();
+});
+
+document.getElementById("medicine_select").addEventListener("change", function() {
+
+    let selected = this.options[this.selectedIndex];
+    let price = selected.getAttribute("data-price");
+
+    document.getElementById("medicine_price").value = price ? price : "";
+
 });
 </script>
 

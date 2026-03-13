@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\PatientController;
+use App\Http\Controllers\MedicineController;
 
 Auth::routes();
 
@@ -144,3 +145,11 @@ Route::get('/prescriptions/patient/{phone}',      [PrescriptionController::class
     💊 Prescription History
 </a>
 */
+
+
+
+Route::get('/medicines', [MedicineController::class,'index'])->name('hospital_admin.medicines.index');
+
+Route::post('/medicines/store', [MedicineController::class,'store'])->name('hospital_admin.medicines.store');
+
+Route::get('/medicine-price/{id}',[MedicineController::class,'getPrice'])->name('hospital_admin.medicine.price');

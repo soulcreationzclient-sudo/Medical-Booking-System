@@ -122,6 +122,13 @@
                     </li>
 
                     <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('hospital_admin.medicines*') ? 'active' : '' }}"
+                           href="{{ route('hospital_admin.medicines.index') }}">
+                            Medicines
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('hospital_admin.doctors*') ? 'active' : '' }}"
                            href="{{ route('hospital_admin.doctors_add_view') }}">
                             Doctors

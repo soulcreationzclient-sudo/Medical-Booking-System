@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Medicine;
 
 class PrescriptionController extends Controller
 {
@@ -34,8 +35,12 @@ class PrescriptionController extends Controller
             ->where('booking_id', $bookingId)
             ->orderBy('id')
             ->get();
+        
+        $medicines = DB::table('medicines')
+            ->where('hospital_id', auth()->user()->hospital_id)
+            ->get();
 
-        return view('prescriptions.show', compact('booking', 'patient', 'prescriptions'));
+        return view('prescriptions.show', compact('booking', 'patient', 'prescriptions', 'medicines'));
     }
 
     // ─────────────────────────────────────────────
