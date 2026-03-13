@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('investigations', function (Blueprint $table) {
                 $table->id();
 
-    $table->foreignId('case_entry_id')->constrained('case_entries')->cascadeOnDelete();
+    $table->foreignId('case_entry_id')->constrained('caseentries')->cascadeOnDelete();
 
     $table->string('test_name');
     $table->text('remarks')->nullable();

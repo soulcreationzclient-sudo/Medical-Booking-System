@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('case_entries', function (Blueprint $table) {  // ← fixed: was 'caseentries'
+        Schema::create('caseentries', function (Blueprint $table) {  // ← fixed: was 'caseentries'
             $table->id();
 
             $table->foreignId('booking_id')->constrained('bookings')->cascadeOnDelete();
@@ -27,6 +27,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('case_entries');  // ← fixed: was 'caseentries'
+        Schema::dropIfExists('caseentries');  // ← fixed: was 'caseentries'
     }
 };
