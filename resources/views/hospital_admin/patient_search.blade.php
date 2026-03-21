@@ -173,7 +173,7 @@
     }
     .btn-view:hover { background: #0f52a8; color: #fff; }
 
-    /* EMPTY / NO SEARCH STATE */
+    /* EMPTY STATE */
     .empty-state {
         text-align: center;
         padding: 60px 20px;
@@ -247,7 +247,7 @@
                         Search
                     </button>
                     @if(request('name') || request('phone') || request('ic_passport'))
-                        <a href="{{ route('hospital_admin.patients.search') }}" class="btn-clear">✕</a>
+                        <a href="{{ route('hospital_admin.patients.search') }}" class="btn-clear">✕ Clear</a>
                     @endif
                 </div>
 
@@ -256,85 +256,76 @@
     </div>
 
     {{-- RESULTS --}}
-    @if(request('name') || request('phone') || request('ic_passport'))
-        <div class="results-card">
-            <div class="results-header">
-                <h6><i class="fas fa-list me-2 text-primary"></i>Search Results</h6>
-                <span class="badge-count">{{ $patients->count() }} found</span>
-            </div>
+    <div class="results-card">
+        <div class="results-header">
+            <h6>
+                <i class="fas fa-list me-2 text-primary"></i>
+                {{ (request('name') || request('phone') || request('ic_passport')) ? 'Search Results' : 'All Patients' }}
+            </h6>
+            <span class="badge-count">{{ $patients->count() }} found</span>
+        </div>
 
-            @if($patients->count() > 0)
-                <div style="overflow-x:auto">
-                    <table class="patient-table">
-                        <thead>
-                            <tr>
-                                <th>Patient</th>
-                                <th>IC / Passport</th>
-                                <th>Phone</th>
-                                <th>Age</th>
-                                <th>Gender</th>
-                                <th>Bookings</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($patients as $patient)
-                                <tr onclick="window.location='{{ route('hospital_admin.patients.show', $patient->id) }}'">
-                                    <td>
-                                        <div class="patient-name-cell">
-                                            <div class="avatar">{{ strtoupper(substr($patient->name, 0, 1)) }}</div>
-                                            <div>
-                                                <div style="font-weight:600;color:#1e293b">{{ $patient->name }}</div>
-                                                <div style="font-size:12px;color:#94a3b8">{{ $patient->nationality ?? '—' }}</div>
-                                            </div>
+        @if($patients->count() > 0)
+            <div style="overflow-x:auto">
+                <table class="patient-table">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>IC / Passport</th>
+                            <th>Phone</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Bookings</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($patients as $patient)
+                            <tr onclick="window.location='{{ route('hospital_admin.patients.show', $patient->id) }}'">
+                                <td>
+                                    <div class="patient-name-cell">
+                                        <div class="avatar">{{ strtoupper(substr($patient->name, 0, 1)) }}</div>
+                                        <div>
+                                            <div style="font-weight:600;color:#1e293b">{{ $patient->name }}</div>
+                                            <div style="font-size:12px;color:#94a3b8">{{ $patient->nationality ?? '—' }}</div>
                                         </div>
-                                    </td>
-                                    <td>{{ $patient->ic_passport_no ?? '—' }}</td>
-                                    <td>{{ $patient->phone_no }}</td>
-                                    <td>{{ $patient->age ?? '—' }}</td>
-                                    <td>
-                                        @if($patient->gender)
-                                            <span class="gender-badge gender-{{ $patient->gender }}">
-                                                {{ ucfirst($patient->gender) }}
-                                            </span>
-                                        @else
-                                            <span style="color:#cbd5e1">—</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <span style="font-weight:700;color:#1363C6">{{ $patient->bookings_count }}</span>
-                                        <span style="color:#94a3b8;font-size:12px"> visits</span>
-                                    </td>
-                                    <td>
-                                        <a href="{{ route('hospital_admin.patients.show', $patient->id) }}"
-                                           class="btn-view" onclick="event.stopPropagation()">
-                                            View →
-                                        </a>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <div class="empty-state">
-                    <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                    <h6>No patients found</h6>
-                    <p>Try a different name, phone number, or IC/Passport number</p>
-                </div>
-            @endif
-        </div>
-
-    @else
-        {{-- Initial state --}}
-        <div class="results-card">
-            <div class="empty-state">
-                <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                <h6>Search for a patient</h6>
-                <p>Enter a name, phone number, or IC/Passport number above to find patient records</p>
+                                    </div>
+                                </td>
+                                <td>{{ $patient->ic_passport_no ?? '—' }}</td>
+                                <td>{{ $patient->phone_no }}</td>
+                                <td>{{ $patient->age ?? '—' }}</td>
+                                <td>
+                                    @if($patient->gender)
+                                        <span class="gender-badge gender-{{ $patient->gender }}">
+                                            {{ ucfirst($patient->gender) }}
+                                        </span>
+                                    @else
+                                        <span style="color:#cbd5e1">—</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span style="font-weight:700;color:#1363C6">{{ $patient->bookings_count }}</span>
+                                    <span style="color:#94a3b8;font-size:12px"> visits</span>
+                                </td>
+                                <td>
+                                    <a href="{{ route('hospital_admin.patients.show', $patient->id) }}"
+                                       class="btn-view" onclick="event.stopPropagation()">
+                                        View →
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
-        </div>
-    @endif
+        @else
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <h6>No patients found</h6>
+                <p>Try a different name, phone number, or IC/Passport number</p>
+            </div>
+        @endif
+    </div>
 
 </div>
 

@@ -400,6 +400,17 @@
 </div>
 
 <script>
+// ── DOB → Age auto-calculation ──
+document.getElementById('dob').addEventListener('change', function () {
+    const dob = new Date(this.value);
+    if (!this.value || isNaN(dob)) return;
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+    document.getElementById('age').value = age;
+});
+
 // ── PRE-FILL: look up patient when phone loses focus ──
 const phoneInput = document.getElementById('patient_phone');
 

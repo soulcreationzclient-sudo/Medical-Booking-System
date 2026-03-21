@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Medicine;
-use Auth;
 
 class MedicineController extends Controller
 {
@@ -16,21 +15,33 @@ class MedicineController extends Controller
 
     public function store(Request $request)
     {
-        Medicine::create([
-            'hospital_id' => auth()->user()->hospital_id,
-            'name' => $request->name,
-            'dosage' => $request->dosage,
-            'price' => $request->price,
+        $request->validate([
+            'name'   => 'required|string|max:255',
+            'dosage' => 'nullable|string|max:100',
+            'price'  => 'required|numeric|min:0',
         ]);
 
-        return redirect()->back()->with('success','Medicine added');
+        Medicine::create([
+            'hospital_id' => auth()->user()->hospital_id,
+            'name'        => $request->name,
+            'dosage'      => $request->dosage,
+            'price'       => $request->price,
+        ]);
+
+        return redirect()->route('hospital_admin.medicines.index')
+                         ->with('success', 'Medicine added successfully.');
     }
 
     public function getPrice($id)
     {
         $medicine = Medicine::find($id);
+        if (!$medicine) {
+            return response()->json(['price' => null], 404);
+        }
         return response()->json([
-            'price' => $medicine->price
+            'price'  => $medicine->price,
+            'dosage' => $medicine->dosage,
+            'name'   => $medicine->name,
         ]);
     }
 }

@@ -10,6 +10,6 @@ class Medicine extends Model
         'hospital_id',
         'name',
         'dosage',
-        'price'
+        'price',
     ];
 }
