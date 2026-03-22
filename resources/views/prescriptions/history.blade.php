@@ -73,7 +73,7 @@
 
 <div class="hist-hero">
     <div class="container">
-        <a href="{{ route('hospital_admin.patients.show', $patient->id) }}" class="back-btn">
+        <a href="{{ route('hospital_admin.patients.profile', $patient->id) }}" class="back-btn">
             ← Back to Patient Profile
         </a>
         <div style="color:#fff">

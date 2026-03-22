@@ -114,9 +114,10 @@
 
                 {{-- HOSPITAL ADMIN --}}
                 @can('hospital_admin')
+
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('hospital_admin.dashboard') ? 'active' : '' }}"
-                           href="#">
+                           href="{{ route('hospital_admin.dashboard') }}">
                             Dashboard
                         </a>
                     </li>
@@ -156,13 +157,21 @@
                         </a>
                     </li>
 
-                    {{-- ✅ NEW: PATIENTS --}}
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('hospital_admin.patients*') ? 'active' : '' }}"
                            href="{{ route('hospital_admin.patients.search') }}">
                             Patients
                         </a>
                     </li>
+
+                    {{-- ✅ NEW: FINANCIALS --}}
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('hospital_admin.financials*') ? 'active' : '' }}"
+                           href="{{ route('hospital_admin.financials.index') }}">
+                            Financials
+                        </a>
+                    </li>
+
                 @endcan
 
             </ul>

@@ -667,7 +667,6 @@
         gap: 10px;
         margin-left: auto;
         min-width: 280px;
-        /* Ensures enough room for both btns at normal width */
     }
     .filter-bar-modern .btn-saas {
         flex: 1 1 0px;
@@ -760,7 +759,8 @@
             <button class="btn-saas primary" type="submit">
                 <span style="vertical-align: middle; margin-right:6px;">🔎</span>Search
             </button>
-            <a href="{{ route('doctor.overall_bookings') }}" class="btn-saas secondary" style="text-decoration: none;">
+            {{-- ✅ CHANGE 3: Fixed from route('doctor.overall_bookings') --}}
+            <a href="{{ route('hospital_admin.overall_bookings') }}" class="btn-saas secondary" style="text-decoration: none;">
                 Reset
             </a>
         </div>
@@ -772,8 +772,6 @@
 @if($booking_list->count())
 
 <style>
-
-/* --- SAME TABLE STYLE AS DOCTOR PAGE --- */
 
 .saas-table-wrap {
   width: 100%;
@@ -861,14 +859,14 @@
   font-weight: 500;
 }
 
-.saas-badge.pending { background:#fdf6d7; color:#b8861b; }
-.saas-badge.accepted { background:#e6fbe9; color:#1a9250;}
-.saas-badge.completed { background:#e5eeff; color:#3261cb;}
-.saas-badge.rejected { background:#fee2e2; color:#cb2d2b;}
-.saas-badge.no_show { background:#f0eafd; color:#845afd;}
-.saas-badge.cancelled { background:#f1f5f9; color:#757575;}
-.saas-badge.rescheduled { background:#eaf0fc; color:#3b4295;}
-.saas-badge.unverified { background:#fdf6d7; color:#b8861b;}
+.saas-badge.pending    { background:#fdf6d7; color:#b8861b; }
+.saas-badge.accepted   { background:#e6fbe9; color:#1a9250; }
+.saas-badge.completed  { background:#e5eeff; color:#3261cb; }
+.saas-badge.rejected   { background:#fee2e2; color:#cb2d2b; }
+.saas-badge.no_show    { background:#f0eafd; color:#845afd; }
+.saas-badge.cancelled  { background:#f1f5f9; color:#757575; }
+.saas-badge.rescheduled { background:#eaf0fc; color:#3b4295; }
+.saas-badge.unverified { background:#fdf6d7; color:#b8861b; }
 
 .saas-actions-cell {
   position: relative;
@@ -878,6 +876,7 @@
 .saas-dropdown-actions-row {
   display: flex;
   gap: 4px;
+  flex-wrap: wrap;
 }
 
 .saas-dropdown-btn {
@@ -888,13 +887,18 @@
   padding: 4px 11px;
   font-size: 0.9rem;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }
 
-.saas-dropdown-btn.accept { background:#e6fbe9; color:#16a34a;}
-.saas-dropdown-btn.reject { background:#fee2e2; color:#cb2d2b;}
-.saas-dropdown-btn.resched { background:#eaf0fc; color:#3b4295;}
-.saas-dropdown-btn.noshow { background:#f0eafd; color:#845afd;}
-.saas-dropdown-btn.complete { background:#def6e3; color:#1a9250;}
+.saas-dropdown-btn.accept   { background:#e6fbe9; color:#16a34a; }
+.saas-dropdown-btn.reject   { background:#fee2e2; color:#cb2d2b; }
+.saas-dropdown-btn.resched  { background:#eaf0fc; color:#3b4295; }
+.saas-dropdown-btn.noshow   { background:#f0eafd; color:#845afd; }
+.saas-dropdown-btn.complete { background:#def6e3; color:#1a9250; }
+{{-- ✅ CHANGE 1: New prescription button style --}}
+.saas-dropdown-btn.rx       { background:#fef9c3; color:#854d0e; }
 
 .saas-actions-cell .saas-three-dot-btn,
 .saas-actions-cell .saas-dropdown-btns-wrap {
@@ -947,16 +951,13 @@
 
 <td>
 <div class="saas-patient-stack">
-
 <div class="saas-avatar">
 {{ strtoupper(substr($booking->patient_name,0,1)) }}
 </div>
-
 <div class="saas-patient-details">
 <span class="saas-name-bold">{{ $booking->patient_name }}</span>
 <span class="saas-email-muted">{{ $booking->patient_email }}</span>
 </div>
-
 </div>
 </td>
 
@@ -1034,11 +1035,13 @@ Assign
 
 @endif
 
-
-<a href="{{ route('prescriptions.show', $booking->id) }}"
-class="saas-dropdown-btn complete">
-Prescription
+{{-- ✅ CHANGE 2: Replaced old prescriptions.show route with new create route --}}
+@if(in_array($booking->status, ['pending', 'accepted', 'completed']))
+<a href="{{ route('hospital_admin.prescriptions.create', $booking->id) }}"
+   class="saas-dropdown-btn rx">
+    📋 Prescription
 </a>
+@endif
 
 </div>
 
@@ -1102,8 +1105,8 @@ Prescription
                     <small>Select a new time for the appointment</small>
                 </div>
                 <div class="form-group">
-                    <label for="new-time">Assigned To*</label>
-                    <select name="assigned_to" id="" class="form-control">
+                    <label>Assigned To</label>
+                    <select name="assigned_to" class="form-control">
                         @foreach ($doctors as $doctor)
                         <option value="{{$doctor->id}}">{{$doctor->name}}</option>
                         @endforeach
@@ -1125,7 +1128,7 @@ Prescription
         </div>
     </div>
 </div>
-{{-- ASSIGN MODAL --}}
+
 {{-- Assign To Modal --}}
 <div id="assignModal" class="modal">
     <div class="modal-content">
@@ -1153,6 +1156,7 @@ Prescription
         </div>
     </div>
 </div>
+
 <script>
     let currentAssignBookingId = null;
 
@@ -1203,6 +1207,7 @@ window.addEventListener('click', function(e) {
     const m = document.getElementById('assignModal');
     if (e.target === m) closeAssignModal();
 });
+
 // Update booking status
 function updateStatus(id, status) {
     let confirmMessage = 'Confirm action?';
@@ -1243,21 +1248,12 @@ function updateStatus(id, status) {
 
 // Open reschedule modal
 function openRescheduleModal(bookingId, patientName, bookingDate, startTime) {
-    // Set booking ID
     document.getElementById('booking-id').value = bookingId;
-
-    // Set patient info
     document.getElementById('modal-patient-name').textContent = patientName;
     document.getElementById('modal-current-date').textContent = formatDate(bookingDate);
     document.getElementById('modal-current-time').textContent = formatTime(startTime);
-
-    // Reset form
     document.getElementById('rescheduleForm').reset();
-
-    // Show modal
     document.getElementById('rescheduleModal').classList.add('show');
-
-    // Prevent body scroll
     document.body.style.overflow = 'hidden';
 }
 
@@ -1274,18 +1270,15 @@ function submitReschedule() {
     const newTime = document.getElementById('new-time').value;
     const reason = document.getElementById('reason').value;
 
-    // Validate
     if (!newDate || !newTime) {
         alert('Please select both date and time');
         return;
     }
 
-    // Confirm
     if (!confirm(`Reschedule appointment to ${newDate} at ${newTime}?`)) {
         return;
     }
 
-    // Submit
     fetch(`/hospital_admin/bookings/${bookingId}/reschedule`, {
         method: 'POST',
         headers: {

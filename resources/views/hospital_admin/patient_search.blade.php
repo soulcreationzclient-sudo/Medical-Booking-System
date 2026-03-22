@@ -281,7 +281,7 @@
                     </thead>
                     <tbody>
                         @foreach($patients as $patient)
-                            <tr onclick="window.location='{{ route('hospital_admin.patients.show', $patient->id) }}'">
+                            <tr onclick="window.location='{{ route('hospital_admin.patients.profile', $patient->id) }}'">
                                 <td>
                                     <div class="patient-name-cell">
                                         <div class="avatar">{{ strtoupper(substr($patient->name, 0, 1)) }}</div>
@@ -308,7 +308,7 @@
                                     <span style="color:#94a3b8;font-size:12px"> visits</span>
                                 </td>
                                 <td>
-                                    <a href="{{ route('hospital_admin.patients.show', $patient->id) }}"
+                                    <a href="{{ route('hospital_admin.patients.profile', $patient->id) }}"
                                        class="btn-view" onclick="event.stopPropagation()">
                                         View →
                                     </a>

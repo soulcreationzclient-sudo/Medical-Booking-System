@@ -9,18 +9,28 @@ class PatientController extends Controller
 {
     public function search(Request $request)
     {
+        $hospitalId = auth()->user()->hospital_id;
         $name       = trim($request->get('name', ''));
         $phone      = trim($request->get('phone', ''));
         $icPassport = trim($request->get('ic_passport', ''));
 
+        // Scoped to this hospital via whereIn subquery — no JOIN/GROUP BY
+        // avoids MySQL ONLY_FULL_GROUP_BY strict mode error
+        $hospitalPhones = DB::table('bookings')
+            ->where('hospital_id', $hospitalId)
+            ->select('patient_phone');
+
         $patients = DB::table('patients')
-            ->when($name, fn($q) => $q->where('name', 'like', "%{$name}%"))
-            ->when($phone, fn($q) => $q->where('phone_no', 'like', "%{$phone}%"))
-            ->when($icPassport, fn($q) => $q->where('ic_passport_no', 'like', "%{$icPassport}%"))
+            ->whereIn('phone_no', $hospitalPhones)
+            ->when($name,       fn($q) => $q->where('name',          'like', "%{$name}%"))
+            ->when($phone,      fn($q) => $q->where('phone_no',      'like', "%{$phone}%"))
+            ->when($icPassport, fn($q) => $q->where('ic_passport_no','like', "%{$icPassport}%"))
             ->selectRaw('patients.*, (
-                SELECT COUNT(*) FROM bookings
+                SELECT COUNT(*)
+                FROM bookings
                 WHERE bookings.patient_phone = patients.phone_no
-            ) as bookings_count')
+                AND   bookings.hospital_id   = ?
+            ) as bookings_count', [$hospitalId])
             ->orderBy('name')
             ->get();
 
@@ -29,28 +39,35 @@ class PatientController extends Controller
 
     public function show($id)
     {
-        $patient = DB::table('patients')->where('id', $id)->first();
+        $hospitalId = auth()->user()->hospital_id;
+        $patient    = DB::table('patients')->where('id', $id)->first();
+
         if (!$patient) abort(404);
 
+        // Only bookings for this hospital
         $bookings = DB::table('bookings')
             ->leftJoin('doctors', 'doctors.id', '=', 'bookings.doctor_id')
             ->select('bookings.*', 'doctors.name as doctor_name')
             ->where('bookings.patient_phone', $patient->phone_no)
+            ->where('bookings.hospital_id', $hospitalId)
             ->orderByDesc('bookings.booking_date')
             ->orderByDesc('bookings.start_time')
             ->get();
 
         $bookingIds = $bookings->pluck('id');
 
+        // Only prescriptions for this hospital
         $prescriptions = $bookingIds->isEmpty()
             ? collect()
             : DB::table('prescriptions')
                 ->whereIn('booking_id', $bookingIds)
+                ->where('hospital_id', $hospitalId)
                 ->orderByDesc('created_at')
                 ->get();
 
+        // Only medicines for this hospital
         $medicines = DB::table('medicines')
-            ->where('hospital_id', auth()->user()->hospital_id)
+            ->where('hospital_id', $hospitalId)
             ->get();
 
         return view('hospital_admin.patient_show',
@@ -101,7 +118,7 @@ class PatientController extends Controller
             'updated_at'             => now(),
         ]);
 
-        return redirect()->route('hospital_admin.patients.show', $id)
+        return redirect()->route('hospital_admin.patients.profile', $id)
                          ->with('success', 'Patient updated successfully.');
     }
 
@@ -116,22 +133,32 @@ class PatientController extends Controller
             'booking_id'   => 'nullable|integer|exists:bookings,id',
         ]);
 
+        $hospitalId = auth()->user()->hospital_id;
+
+        // Verify medicine belongs to this hospital
         $medicine = DB::table('medicines')
             ->where('id', $request->medicine_id)
+            ->where('hospital_id', $hospitalId)
             ->first();
 
-        // Use submitted booking_id or auto-assign latest booking
+        if (!$medicine) {
+            return back()->with('error', 'Medicine not found.');
+        }
+
+        // Use submitted booking_id or auto-assign latest booking for THIS hospital
         $bookingId = $request->booking_id;
         if (!$bookingId) {
-            $patient = DB::table('patients')->where('id', $id)->first();
+            $patient   = DB::table('patients')->where('id', $id)->first();
             $bookingId = DB::table('bookings')
                 ->where('patient_phone', $patient->phone_no)
+                ->where('hospital_id', $hospitalId)
                 ->orderByDesc('booking_date')
                 ->value('id');
         }
 
         DB::table('prescriptions')->insert([
             'booking_id'    => $bookingId,
+            'hospital_id'   => $hospitalId,
             'medicine_name' => $medicine->name,
             'dosage'        => $request->dosage,
             'frequency'     => $request->frequency,
@@ -141,15 +168,21 @@ class PatientController extends Controller
             'updated_at'    => now(),
         ]);
 
-        return redirect()->route('hospital_admin.patients.show', $id)
+        return redirect()->route('hospital_admin.patients.profile', $id)
                          ->with('success', 'Prescription added successfully.');
     }
 
     public function deletePrescription($id, $pid)
     {
-        DB::table('prescriptions')->where('id', $pid)->delete();
+        $hospitalId = auth()->user()->hospital_id;
 
-        return redirect()->route('hospital_admin.patients.show', $id)
+        // Only delete prescriptions belonging to this hospital
+        DB::table('prescriptions')
+            ->where('id', $pid)
+            ->where('hospital_id', $hospitalId)
+            ->delete();
+
+        return redirect()->route('hospital_admin.patients.profile', $id)
                          ->with('success', 'Prescription deleted.');
     }
 }
