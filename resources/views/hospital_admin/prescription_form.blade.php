@@ -34,7 +34,7 @@
                                         data-price="{{ $m->price }}"
                                         data-stock="{{ $m->stock }}"
                                         data-unit="{{ $m->unit }}">
-                                    {{ $m->name }} ({{ $m->unit }}) — ₹{{ $m->price }} | Stock: {{ $m->stock }}
+                                    {{ $m->name }} ({{ $m->unit }}) — RM{{ $m->price }} | Stock: {{ $m->stock }}
                                 </option>
                                 @endforeach
                             </select>
@@ -51,7 +51,7 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label small fw-semibold">Line Total</label>
-                            <div class="form-control bg-light text-center fw-bold" id="lineTotal0">₹0.00</div>
+                            <div class="form-control bg-light text-center fw-bold" id="lineTotal0">RM0.00</div>
                         </div>
                         <div class="col-md-1 d-flex align-items-end">
                             <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRow(this)">✕</button>
@@ -66,7 +66,7 @@
                 {{-- GRAND TOTAL --}}
                 <div class="alert alert-primary d-flex justify-content-between align-items-center">
                     <span class="fw-bold">Total Medicine Cost:</span>
-                    <span class="fw-bold fs-5" id="grandTotal">₹0.00</span>
+                    <span class="fw-bold fs-5" id="grandTotal">RM0.00</span>
                 </div>
 
                 {{-- NOTES --}}
@@ -107,7 +107,7 @@ function updateLineTotal(rowIndex) {
     const stock  = parseInt(selectedOption?.dataset?.stock || 0);
     const total  = price * qty;
 
-    if (lineTotalEl) lineTotalEl.textContent = `₹${total.toFixed(2)}`;
+    if (lineTotalEl) lineTotalEl.textContent = `RM${total.toFixed(2)}`;
 
     // Warn if exceeds stock
     if (qty > stock && stock > 0) {
@@ -123,9 +123,9 @@ function updateLineTotal(rowIndex) {
 function recalcGrandTotal() {
     let grand = 0;
     document.querySelectorAll('[id^="lineTotal"]').forEach(el => {
-        grand += parseFloat(el.textContent.replace('₹','') || 0);
+        grand += parseFloat(el.textContent.replace('RM','') || 0);
     });
-    document.getElementById('grandTotal').textContent = `₹${grand.toFixed(2)}`;
+    document.getElementById('grandTotal').textContent = `RM${grand.toFixed(2)}`;
 }
 
 function addMedicineRow() {
@@ -150,7 +150,7 @@ function addMedicineRow() {
     const lineTotalEl = template.querySelector('[id^="lineTotal"]');
     if (lineTotalEl) {
         lineTotalEl.id = `lineTotal${idx}`;
-        lineTotalEl.textContent = '₹0.00';
+        lineTotalEl.textContent = 'RM0.00';
     }
 
     document.getElementById('medicinesContainer').appendChild(template);

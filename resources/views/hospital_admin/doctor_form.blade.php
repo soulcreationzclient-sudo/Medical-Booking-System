@@ -100,7 +100,7 @@
 
                             {{-- ✅ NEW: Consultation Fee --}}
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold">Consultation Fee (₹)</label>
+                                <label class="form-label fw-semibold">Consultation Fee (RM)</label>
                                 <input type="number" name="consultation_fee"
                                     class="form-control @error('consultation_fee') is-invalid @enderror"
                                     value="{{ old('consultation_fee', $data['consultation_fee'] ?? '0') }}"

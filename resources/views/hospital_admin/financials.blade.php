@@ -15,7 +15,7 @@
                     <div style="font-size:2rem; font-weight:700;">▲</div>
                     <div>
                         <div class="small opacity-75 fw-semibold text-uppercase">Total Income</div>
-                        <div class="fs-3 fw-bold">₹{{ number_format($totalProfit, 2) }}</div>
+                        <div class="fs-3 fw-bold">RM{{ number_format($totalProfit, 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -26,7 +26,7 @@
                     <div style="font-size:2rem; font-weight:700;">▼</div>
                     <div>
                         <div class="small opacity-75 fw-semibold text-uppercase">Total Expenses</div>
-                        <div class="fs-3 fw-bold">₹{{ number_format($totalExpense, 2) }}</div>
+                        <div class="fs-3 fw-bold">RM{{ number_format($totalExpense, 2) }}</div>
                     </div>
                 </div>
             </div>
@@ -38,7 +38,7 @@
                     <div style="font-size:2rem; font-weight:700;">{{ $netBalance >= 0 ? '▲' : '▼' }}</div>
                     <div>
                         <div class="small opacity-75 fw-semibold text-uppercase">Net Balance</div>
-                        <div class="fs-3 fw-bold">₹{{ number_format(abs($netBalance), 2) }}
+                        <div class="fs-3 fw-bold">RM{{ number_format(abs($netBalance), 2) }}
                             <small class="fs-6">{{ $netBalance >= 0 ? 'Profit' : 'Loss' }}</small>
                         </div>
                     </div>
@@ -92,7 +92,7 @@
                                     </td>
                                     <td>{{ $entry->description }}</td>
                                     <td class="fw-bold {{ $entry->type === 'profit' ? 'text-success' : 'text-danger' }}">
-                                        {{ $entry->type === 'profit' ? '+' : '-' }}₹{{ number_format($entry->amount, 2) }}
+                                        {{ $entry->type === 'profit' ? '+' : '-' }}RM{{ number_format($entry->amount, 2) }}
                                     </td>
                                     <td>
                                         <button class="btn btn-sm btn-danger"
@@ -138,7 +138,7 @@
                         <input type="text" name="description" class="form-control mb-2" placeholder="Description" required>
                         <div class="row g-2 mb-2">
                             <div class="col-6">
-                                <input type="number" name="amount" class="form-control" placeholder="₹ Amount" step="0.01" min="0.01" required>
+                                <input type="number" name="amount" class="form-control" placeholder="RM Amount" step="0.01" min="0.01" required>
                             </div>
                             <div class="col-6">
                                 <input type="date" name="entry_date" class="form-control" value="{{ now()->toDateString() }}" required>
@@ -170,7 +170,7 @@
                     </div>
                     <div class="row g-2">
                         <div class="col-6">
-                            <label class="form-label fw-semibold">Amount (₹) <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold">Amount (RM) <span class="text-danger">*</span></label>
                             <input type="number" name="amount" class="form-control" step="0.01" min="0.01" required>
                         </div>
                         <div class="col-6">
@@ -230,12 +230,12 @@ new Chart(document.getElementById('monthlyChart'), {
         plugins: {
             legend: { position: 'bottom' },
             tooltip: {
-                callbacks: { label: ctx => ` ₹${ctx.parsed.y.toLocaleString('en-IN')}` }
+                callbacks: { label: ctx => ` RM${ctx.parsed.y.toLocaleString('en-IN')}` }
             }
         },
         scales: {
             y: {
-                ticks: { callback: val => '₹' + val.toLocaleString('en-IN') }
+                ticks: { callback: val => 'RM' + val.toLocaleString('en-IN') }
             }
         }
     }

@@ -506,15 +506,15 @@
         <div class="billing-summary">
             <div class="billing-summary-item">
                 <div class="billing-summary-label">Total Billed</div>
-                <div class="billing-summary-value" style="color:#1363C6">₹{{ number_format($totalBill, 2) }}</div>
+                <div class="billing-summary-value" style="color:#1363C6">RM{{ number_format($totalBill, 2) }}</div>
             </div>
             <div class="billing-summary-item">
                 <div class="billing-summary-label">Amount Paid</div>
-                <div class="billing-summary-value" style="color:#16a34a">₹{{ number_format($totalPaid, 2) }}</div>
+                <div class="billing-summary-value" style="color:#16a34a">RM{{ number_format($totalPaid, 2) }}</div>
             </div>
             <div class="billing-summary-item">
                 <div class="billing-summary-label">Amount Due</div>
-                <div class="billing-summary-value" style="color:#dc2626">₹{{ number_format($totalDue, 2) }}</div>
+                <div class="billing-summary-value" style="color:#dc2626">RM{{ number_format($totalDue, 2) }}</div>
             </div>
         </div>
 
@@ -547,7 +547,7 @@
                         <input type="text" name="description" placeholder="e.g. Dr. Kumar consultation" required>
                     </div>
                     <div class="billing-field">
-                        <label>Amount (₹) *</label>
+                        <label>Amount (RM) *</label>
                         <input type="number" name="amount" step="0.01" min="0" value="0" required>
                     </div>
                 </div>
@@ -584,7 +584,7 @@
                         <input type="hidden" name="is_past_note" id="isPastNoteHidden" value="0">
                     </div>
                     <div class="billing-field" id="treatmentAmountWrapper">
-                        <label>Amount (₹) *</label>
+                        <label>Amount (RM) *</label>
                         <input type="number" name="amount" id="treatmentAmountInput" step="0.01" min="0" value="0" required>
                     </div>
                 </div>
@@ -623,7 +623,7 @@
                                 <span style="color:#cbd5e1;font-size:12px;font-style:italic">Note only</span>
                             @else
                                 <span style="font-weight:700;color:{{ $entry->type === 'custom_expense' ? '#dc2626' : '#1e293b' }}">
-                                    {{ $entry->type === 'custom_expense' ? '-' : '' }}₹{{ number_format($entry->amount, 2) }}
+                                    {{ $entry->type === 'custom_expense' ? '-' : '' }}RM{{ number_format($entry->amount, 2) }}
                                 </span>
                             @endif
                         </td>
@@ -721,11 +721,11 @@
                                     <span style="color:#94a3b8;font-size:12px;margin-left:8px;">— {{ $item->dosage_instructions }}</span>
                                 @endif
                             </div>
-                            <span style="font-weight:700;color:#1363C6;font-size:14px;">₹{{ number_format($item->lineTotal(), 2) }}</span>
+                            <span style="font-weight:700;color:#1363C6;font-size:14px;">RM{{ number_format($item->lineTotal(), 2) }}</span>
                         </div>
                         @endforeach
                         <div style="text-align:right;font-weight:800;color:#1e293b;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9;">
-                            Total: ₹{{ number_format($rx->totalCost(), 2) }}
+                            Total: RM{{ number_format($rx->totalCost(), 2) }}
                         </div>
                     @else
                         {{-- Fallback: show old-style columns if items are empty (legacy data) --}}
