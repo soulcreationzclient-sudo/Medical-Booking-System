@@ -1,4 +1,4 @@
-@extends('layouts.app2')
+@extends('layouts.app1')
 
 @section('content')
 <div class="container-fluid py-4">
@@ -16,7 +16,8 @@
         {{-- ── LEFT: TABLE + ADD FORM ── --}}
         <div class="col-lg-7">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+                <div class="card-header text-white d-flex justify-content-between align-items-center py-3"
+                     style="background: #1363C6;">
                     <h5 class="mb-0 fw-bold">💊 Medicines</h5>
                     <button class="btn btn-light btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#addMedicineModal">
                         + Add Medicine
@@ -25,8 +26,8 @@
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0" id="medicinesTable">
-                            <thead class="table-primary">
-                                <tr>
+                            <thead>
+                                <tr style="background: #1363C6; color: #fff;">
                                     <th>#</th>
                                     <th>Name</th>
                                     <th>Unit</th>
@@ -52,11 +53,11 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-primary me-1"
+                                        <button class="btn btn-sm btn-primary me-1"
                                             onclick="openEditModal({{ $med->id }}, '{{ addslashes($med->name) }}', '{{ $med->unit }}', {{ $med->price }}, {{ $med->stock }}, '{{ addslashes($med->description ?? '') }}')">
                                             Edit
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger"
+                                        <button class="btn btn-sm btn-danger"
                                             onclick="deleteMedicine({{ $med->id }}, this)">
                                             Delete
                                         </button>
@@ -75,7 +76,8 @@
         {{-- ── RIGHT: PIE CHART ── --}}
         <div class="col-lg-5">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-success text-white py-3">
+                <div class="card-header text-white py-3"
+                     style="background: #1363C6;">
                     <h5 class="mb-0 fw-bold">📊 Stock Distribution</h5>
                 </div>
                 <div class="card-body d-flex flex-column align-items-center">
@@ -115,7 +117,7 @@
         <div class="modal-content">
             <form method="POST" action="{{ route('hospital_admin.medicines.store') }}">
                 @csrf
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header text-white" style="background: #1363C6;">
                     <h5 class="modal-title">Add Medicine</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -167,7 +169,7 @@
             <form method="POST" id="editMedicineForm">
                 @csrf
                 @method('PUT')
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header text-white" style="background: #1363C6;">
                     <h5 class="modal-title">Edit Medicine</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>

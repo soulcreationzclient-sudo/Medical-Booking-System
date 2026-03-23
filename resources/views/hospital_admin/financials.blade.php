@@ -1,4 +1,4 @@
-@extends('layouts.app2')
+@extends('layouts.app1')
 
 @section('content')
 <div class="container-fluid py-4">
@@ -10,9 +10,9 @@
     {{-- ── SUMMARY CARDS ── --}}
     <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm text-white bg-success h-100">
+            <div class="card border-0 shadow-sm text-white h-100" style="background: #16a34a !important;">
                 <div class="card-body d-flex align-items-center gap-3">
-                    <div style="font-size:2.5rem;">💰</div>
+                    <div style="font-size:2rem; font-weight:700;">▲</div>
                     <div>
                         <div class="small opacity-75 fw-semibold text-uppercase">Total Income</div>
                         <div class="fs-3 fw-bold">₹{{ number_format($totalProfit, 2) }}</div>
@@ -21,9 +21,9 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm text-white bg-danger h-100">
+            <div class="card border-0 shadow-sm text-white h-100" style="background: #dc2626 !important;">
                 <div class="card-body d-flex align-items-center gap-3">
-                    <div style="font-size:2.5rem;">📉</div>
+                    <div style="font-size:2rem; font-weight:700;">▼</div>
                     <div>
                         <div class="small opacity-75 fw-semibold text-uppercase">Total Expenses</div>
                         <div class="fs-3 fw-bold">₹{{ number_format($totalExpense, 2) }}</div>
@@ -32,10 +32,10 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm text-white h-100
-                {{ $netBalance >= 0 ? 'bg-primary' : 'bg-dark' }}">
+            <div class="card border-0 shadow-sm text-white h-100"
+                style="background: {{ $netBalance >= 0 ? '#1363C6' : '#1f2937' }} !important;">
                 <div class="card-body d-flex align-items-center gap-3">
-                    <div style="font-size:2.5rem;">{{ $netBalance >= 0 ? '📈' : '⚠️' }}</div>
+                    <div style="font-size:2rem; font-weight:700;">{{ $netBalance >= 0 ? '▲' : '▼' }}</div>
                     <div>
                         <div class="small opacity-75 fw-semibold text-uppercase">Net Balance</div>
                         <div class="fs-3 fw-bold">₹{{ number_format(abs($netBalance), 2) }}
@@ -51,8 +51,9 @@
         {{-- ── LEFT: LEDGER TABLE ── --}}
         <div class="col-lg-7">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">📒 Financial Ledger</h5>
+                <div class="card-header text-white py-3 d-flex justify-content-between align-items-center"
+                     style="background: #1363C6;">
+                    <h5 class="mb-0 fw-bold">Financial Ledger</h5>
                     <div class="d-flex gap-2">
                         <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addFinancialModal"
                                 onclick="setFinancialType('profit')">+ Add Income</button>
@@ -71,8 +72,8 @@
 
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0" id="ledgerTable">
-                            <thead class="table-light">
-                                <tr>
+                            <thead>
+                                <tr style="background: #1363C6; color: #fff;">
                                     <th>Date</th>
                                     <th>Type</th>
                                     <th>Description</th>
@@ -86,7 +87,7 @@
                                     <td class="small text-muted">{{ $entry->entry_date->format('d M Y') }}</td>
                                     <td>
                                         <span class="badge {{ $entry->type === 'profit' ? 'bg-success' : 'bg-danger' }}">
-                                            {{ $entry->type === 'profit' ? '↑ Income' : '↓ Expense' }}
+                                            {{ $entry->type === 'profit' ? '▲ Income' : '▼ Expense' }}
                                         </span>
                                     </td>
                                     <td>{{ $entry->description }}</td>
@@ -94,7 +95,7 @@
                                         {{ $entry->type === 'profit' ? '+' : '-' }}₹{{ number_format($entry->amount, 2) }}
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-danger"
+                                        <button class="btn btn-sm btn-danger"
                                             onclick="deleteFinancial({{ $entry->id }}, this)">✕</button>
                                     </td>
                                 </tr>
@@ -111,17 +112,17 @@
         {{-- ── RIGHT: MONTHLY BAR CHART ── --}}
         <div class="col-lg-5">
             <div class="card border-0 shadow-sm mb-3">
-                <div class="card-header bg-success text-white py-2">
-                    <h6 class="mb-0 fw-bold">📊 Monthly Overview (Last 6 Months)</h6>
+                <div class="card-header text-white py-2" style="background: #1363C6;">
+                    <h6 class="mb-0 fw-bold">Monthly Overview (Last 6 Months)</h6>
                 </div>
                 <div class="card-body">
                     <canvas id="monthlyChart" style="max-height:280px;"></canvas>
                 </div>
             </div>
 
-            {{-- QUICK ADD EXPENSE CARD --}}
+            {{-- QUICK ADD CARD --}}
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-danger text-white py-2">
+                <div class="card-header text-white py-2" style="background: #1363C6;">
                     <h6 class="mb-0 fw-bold">Quick Add</h6>
                 </div>
                 <div class="card-body">
@@ -157,7 +158,7 @@
         <div class="modal-content">
             <form method="POST" action="{{ route('hospital_admin.financials.store') }}">
                 @csrf
-                <div class="modal-header bg-primary text-white" id="financialModalHeader">
+                <div class="modal-header text-white" id="financialModalHeader" style="background: #1363C6;">
                     <h5 class="modal-title" id="financialModalTitle">Add Entry</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -255,10 +256,10 @@ function setFinancialType(type) {
     const header = document.getElementById('financialModalHeader');
     const title  = document.getElementById('financialModalTitle');
     if (type === 'profit') {
-        header.className = 'modal-header bg-success text-white';
+        header.style.background = '#16a34a';
         title.textContent = '+ Add Income';
     } else {
-        header.className = 'modal-header bg-danger text-white';
+        header.style.background = '#dc2626';
         title.textContent = '+ Add Expense';
     }
 }
