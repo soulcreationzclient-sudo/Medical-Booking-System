@@ -592,27 +592,27 @@
     <div class="kpi-chip">
         <span class="kpi-dot kpi-dot--gray"></span>
         <span class="kpi-chip-label">Total</span>
-        <span class="kpi-chip-count">{{ $booking_list->count() }}</span>
+        <span class="kpi-chip-count">{{ $stats['total'] }}</span>
     </div>
     <div class="kpi-chip">
         <span class="kpi-dot kpi-dot--orange"></span>
         <span class="kpi-chip-label">Pending</span>
-        <span class="kpi-chip-count">{{ $booking_list->where('status','pending')->count() }}</span>
+        <span class="kpi-chip-count">{{ $stats['pending'] }}</span>
     </div>
     <div class="kpi-chip">
         <span class="kpi-dot kpi-dot--green"></span>
         <span class="kpi-chip-label">Accepted</span>
-        <span class="kpi-chip-count">{{ $booking_list->where('status','accepted')->count() }}</span>
+        <span class="kpi-chip-count">{{ $stats['accepted'] }}</span>
     </div>
     <div class="kpi-chip">
         <span class="kpi-dot kpi-dot--blue"></span>
         <span class="kpi-chip-label">Completed</span>
-        <span class="kpi-chip-count">{{ $booking_list->where('status','completed')->count() }}</span>
+        <span class="kpi-chip-count">{{ $stats['completed'] }}</span>
     </div>
     <div class="kpi-chip">
         <span class="kpi-dot kpi-dot--red"></span>
         <span class="kpi-chip-label">Rejected / No Show</span>
-        <span class="kpi-chip-count">{{ $booking_list->whereIn('status', ['rejected', 'no_show'])->count() }}</span>
+        <span class="kpi-chip-count">{{ $stats['rejected_no_show'] }}</span>
     </div>
 </div>
 

@@ -456,7 +456,17 @@ class Hospitaladmincontroller extends Controller
 
         $booking_list = $query->latest()->get();
 
-        return view('hospital_admin.overall-bookings', compact('booking_list', 'doctors'));
+        $stats = [
+            'total' => Booking::where('hospital_id', $doctorId)->count(),
+            'pending' => Booking::where('hospital_id', $doctorId)->where('status', 'pending')->count(),
+            'accepted' => Booking::where('hospital_id', $doctorId)->where('status', 'accepted')->count(),
+            'completed' => Booking::where('hospital_id', $doctorId)->where('status', 'completed')->count(),
+            'rejected_no_show' => Booking::where('hospital_id', $doctorId)
+                ->whereIn('status', ['rejected', 'no_show'])
+                ->count(),
+        ];
+
+        return view('hospital_admin.overall-bookings', compact('booking_list', 'doctors', 'stats'));
     }
 
     public function reschedule(Request $request, $id)

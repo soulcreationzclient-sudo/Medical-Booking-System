@@ -135,7 +135,17 @@ class Doctorcontroller extends Controller
 
         $booking_list = $query->latest()->get();
 
-        return view('doctors.overall_bookings', compact('booking_list'));
+        $stats = [
+            'total' => Booking::where('doctor_id', $doctorId)->count(),
+            'pending' => Booking::where('doctor_id', $doctorId)->where('status', 'pending')->count(),
+            'accepted' => Booking::where('doctor_id', $doctorId)->where('status', 'accepted')->count(),
+            'completed' => Booking::where('doctor_id', $doctorId)->where('status', 'completed')->count(),
+            'rejected_no_show' => Booking::where('doctor_id', $doctorId)
+                ->whereIn('status', ['rejected', 'no_show'])
+                ->count(),
+        ];
+
+        return view('doctors.overall_bookings', compact('booking_list', 'stats'));
     }
 
     /**
