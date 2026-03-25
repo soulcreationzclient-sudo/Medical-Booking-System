@@ -503,11 +503,21 @@
 
 <div class="booking-container">
 
-<div class="page-header">
-    <h1>📋 Patient Bookings</h1>
-    <p>Showing {{ $booking_list->count() }} records</p>
+<div class="page-header" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 32px;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 18px;">
+            <h1 style="font-size:2.1rem;font-weight:900;color:#1e3a8a;line-height:1.1;margin:0;">
+                Patient Bookings
+            </h1>
+            <span style="background: #e0edfb; color: #1566d4; font-weight:700; font-size: 1.02rem; border-radius: 999px; padding: 5px 18px 5px 18px; box-shadow: 0 2px 8px rgba(19,99,198,0.07); display: inline-block;">
+                {{ $booking_list->count() }} {{ Str::plural('Record', $booking_list->count()) }}
+            </span>
+        </div>
+        <div style="font-size:1rem; color:#64748b; margin-top:6px; letter-spacing:.01em; font-weight: 400;">
+            Manage and track patient appointments
+        </div>
+    </div>
 </div>
-
 
 <!-- Add booking statistics cards here -->
 
@@ -565,6 +575,7 @@
 .kpi-dot--green { background: #22c55e; }
 .kpi-dot--blue { background: #3b82f6; }
 .kpi-dot--red { background: #ef4444; }
+.kpi-dot--purple { background: #a855f7; }
 @media (max-width: 860px) {
     .kpi-stats-bar {
         gap: 9px;
@@ -608,6 +619,11 @@
         <span class="kpi-dot kpi-dot--blue"></span>
         <span class="kpi-chip-label">Completed</span>
         <span class="kpi-chip-count">{{ $stats['completed'] }}</span>
+    </div>
+    <div class="kpi-chip">
+        <span class="kpi-dot kpi-dot--purple"></span>
+        <span class="kpi-chip-label">Rescheduled</span>
+        <span class="kpi-chip-count">{{ $stats['rescheduled'] }}</span>
     </div>
     <div class="kpi-chip">
         <span class="kpi-dot kpi-dot--red"></span>

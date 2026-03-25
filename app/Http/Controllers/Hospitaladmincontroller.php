@@ -461,6 +461,7 @@ class Hospitaladmincontroller extends Controller
             'pending' => Booking::where('hospital_id', $doctorId)->where('status', 'pending')->count(),
             'accepted' => Booking::where('hospital_id', $doctorId)->where('status', 'accepted')->count(),
             'completed' => Booking::where('hospital_id', $doctorId)->where('status', 'completed')->count(),
+            'rescheduled' => Booking::where('hospital_id', $doctorId)->where('status', 'rescheduled')->count(),
             'rejected_no_show' => Booking::where('hospital_id', $doctorId)
                 ->whereIn('status', ['rejected', 'no_show'])
                 ->count(),

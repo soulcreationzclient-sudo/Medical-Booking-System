@@ -140,6 +140,7 @@ class Doctorcontroller extends Controller
             'pending' => Booking::where('doctor_id', $doctorId)->where('status', 'pending')->count(),
             'accepted' => Booking::where('doctor_id', $doctorId)->where('status', 'accepted')->count(),
             'completed' => Booking::where('doctor_id', $doctorId)->where('status', 'completed')->count(),
+            'rescheduled' => Booking::where('doctor_id', $doctorId)->where('status', 'rescheduled')->count(),
             'rejected_no_show' => Booking::where('doctor_id', $doctorId)
                 ->whereIn('status', ['rejected', 'no_show'])
                 ->count(),

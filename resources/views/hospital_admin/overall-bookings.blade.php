@@ -566,6 +566,7 @@
 .kpi-dot--green { background: #22c55e; }
 .kpi-dot--blue { background: #3b82f6; }
 .kpi-dot--red { background: #ef4444; }
+.kpi-dot--purple { background: #a855f7; }
 
 @media (max-width: 860px) {
     .kpi-chip { min-width:136px; }
@@ -605,6 +606,14 @@
         <span class="kpi-chip-label">Completed</span>
         <span class="kpi-chip-count">
             {{ $stats['completed'] }}
+        </span>
+    </div>
+
+    <div class="kpi-chip">
+        <span class="kpi-dot kpi-dot--purple"></span>
+        <span class="kpi-chip-label">Rescheduled</span>
+        <span class="kpi-chip-count">
+            {{ $stats['rescheduled'] }}
         </span>
     </div>
 
