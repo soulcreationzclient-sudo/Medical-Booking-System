@@ -783,34 +783,48 @@ class Hospitaladmincontroller extends Controller
         ]);
 
         // Mirror income entries into hospital financial ledger
-        if (in_array($request->type, ['consultation', 'treatment', 'operation', 'custom_profit'])) {
-            HospitalFinancial::create([
-                'hospital_id' => $hospitalId,
-                'type'        => 'profit',
-                'description' => "Patient #{$id}: " . $request->description,
-                'amount'      => $request->amount,
-                'entry_date'  => now()->toDateString(),
-                'created_by'  => auth()->id(),
-            ]);
-        }
+        // if (in_array($request->type, ['consultation', 'treatment', 'operation', 'custom_profit'])) {
+        //     HospitalFinancial::create([
+        //         'hospital_id' => $hospitalId,
+        //         'type'        => 'profit',
+        //         'description' => "Patient #{$id}: " . $request->description,
+        //         'amount'      => $request->amount,
+        //         'entry_date'  => now()->toDateString(),
+        //         'created_by'  => auth()->id(),
+        //     ]);
+        // }
 
         return back()->with('success', 'Billing entry added.');
     }
 
     public function patient_mark_paid(Request $request, $id, $entryId)
-    {
-        $entry = PatientBillingEntry::where('id', $entryId)
-            ->where('patient_id', $id)
-            ->where('hospital_id', auth()->user()->hospital_id)
-            ->firstOrFail();
+{
+    $entry = PatientBillingEntry::where('id', $entryId)
+        ->where('patient_id', $id)
+        ->where('hospital_id', auth()->user()->hospital_id)
+        ->firstOrFail();
 
-        $entry->update([
-            'is_paid' => true,
-            'paid_at' => now(),
+    $entry->update([
+        'is_paid' => true,
+        'paid_at' => now(),
+    ]);
+
+    // ── Auto-add to Financial Ledger as Income ──────────────
+    $incomTypes = ['consultation', 'medicine', 'treatment', 'operation'];
+
+    if (in_array($entry->type, $incomTypes)) {
+        HospitalFinancial::create([
+            'hospital_id' => auth()->user()->hospital_id,
+            'type'        => 'profit',
+            'description' => "Patient #{$id}: " . $entry->description,
+            'amount'      => $entry->amount,
+            'entry_date'  => now()->toDateString(),
+            'created_by'  => auth()->id(),
         ]);
-
-        return response()->json(['success' => true, 'message' => 'Marked as paid.']);
     }
+
+    return response()->json(['success' => true, 'message' => 'Marked as paid.']);
+}
 
     public function patient_billing_delete($id, $entryId)
     {
