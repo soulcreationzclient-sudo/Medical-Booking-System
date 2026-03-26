@@ -1101,4 +1101,71 @@ class Hospitaladmincontroller extends Controller
             ]);
         }
     }
+    public function calendar(Request $request)
+{
+    $hospitalId = auth()->user()->hospital_id;
+ 
+    // Determine which month to show
+    $currentMonth = $request->filled('month')
+        ? \Carbon\Carbon::parse($request->month . '-01')
+        : now()->startOfMonth();
+ 
+    $prevMonth = $currentMonth->copy()->subMonth()->format('Y-m');
+    $nextMonth = $currentMonth->copy()->addMonth()->format('Y-m');
+ 
+    // Fetch ALL bookings for this month (± overflow days)
+    $startDate = $currentMonth->copy()->startOfMonth()->startOfWeek(\Carbon\Carbon::SUNDAY);
+    $endDate   = $currentMonth->copy()->endOfMonth()->endOfWeek(\Carbon\Carbon::SATURDAY);
+ 
+    $bookings = DB::table('bookings as b')
+        ->leftJoin('doctors as d', 'd.id', '=', 'b.doctor_id')
+        ->where('b.hospital_id', $hospitalId)
+        ->whereBetween('b.booking_date', [$startDate->toDateString(), $endDate->toDateString()])
+        ->select(
+            'b.id', 'b.patient_name', 'b.patient_phone',
+            'b.booking_date', 'b.start_time', 'b.status',
+            'b.cause', 'b.action_token',
+            'd.name as doctor_name'
+        )
+        ->orderBy('b.start_time')
+        ->get();
+ 
+    // Group bookings by date string for fast lookup
+    $bookingsByDate = $bookings->groupBy('booking_date');
+ 
+    // Build weeks array for the blade template
+    $weeks = [];
+    $cursor = $startDate->copy();
+ 
+    while ($cursor <= $endDate) {
+        $week = [];
+        for ($i = 0; $i < 7; $i++) {
+            $dateStr = $cursor->toDateString();
+            $week[] = [
+                'date'     => $cursor->copy(),
+                'inMonth'  => $cursor->month === $currentMonth->month,
+                'bookings' => $bookingsByDate->get($dateStr, collect()),
+            ];
+            $cursor->addDay();
+        }
+        $weeks[] = $week;
+    }
+ 
+    // Pass flat list for JS day-overflow modal
+    $allBookings = $bookings->map(fn($b) => [
+        'id'           => $b->id,
+        'patient_name' => $b->patient_name,
+        'patient_phone'=> $b->patient_phone,
+        'booking_date' => $b->booking_date,
+        'start_time'   => $b->start_time,
+        'status'       => $b->status,
+        'cause'        => $b->cause,
+        'action_token' => $b->action_token,
+        'doctor_name'  => $b->doctor_name,
+    ])->values();
+ 
+    return view('hospital_admin.calendar', compact(
+        'weeks', 'currentMonth', 'prevMonth', 'nextMonth', 'allBookings'
+    ));
+}
 }

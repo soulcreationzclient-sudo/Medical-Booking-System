@@ -6,20 +6,48 @@
     {{-- ── HEADER ── --}}
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h4 class="fw-bold mb-0" style="color:#1363C6;">📅 Bookings Calendar</h4>
-            <div class="text-muted small">All doctors · {{ $currentMonth->format('F Y') }}</div>
+            <h4 class="fw-bold mb-0" style="color:#1363C6;">📅 My Bookings Calendar</h4>
+            <div class="text-muted small">{{ auth()->user()->name }} · {{ $currentMonth->format('F Y') }}</div>
         </div>
         <div class="d-flex align-items-center gap-2">
-            <a href="{{ route('hospital_admin.calendar', ['month' => $prevMonth]) }}"
+            <a href="{{ route('doctor.calendar', ['month' => $prevMonth]) }}"
                class="btn btn-outline-secondary btn-sm px-3">‹ Prev</a>
             <span class="fw-semibold px-2" style="min-width:130px;text-align:center;">
                 {{ $currentMonth->format('F Y') }}
             </span>
-            <a href="{{ route('hospital_admin.calendar', ['month' => $nextMonth]) }}"
+            <a href="{{ route('doctor.calendar', ['month' => $nextMonth]) }}"
                class="btn btn-outline-secondary btn-sm px-3">Next ›</a>
-            <a href="{{ route('hospital_admin.calendar', ['month' => now()->format('Y-m')]) }}"
+            <a href="{{ route('doctor.calendar', ['month' => now()->format('Y-m')]) }}"
                class="btn btn-sm ms-2" style="background:#1363C6;color:#fff;">Today</a>
         </div>
+    </div>
+
+    {{-- ── STATS ROW ── --}}
+    <div class="row g-3 mb-4">
+        @php
+            $flat = collect($allBookings);
+        @endphp
+        @foreach([
+            ['pending',  '#f59e0b', 'Pending'],
+            ['accepted', '#10b981', 'Accepted'],
+            ['completed','#1363C6', 'Completed'],
+        ] as [$st, $col, $lbl])
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm" style="border-left:4px solid {{ $col }} !important;">
+                <div class="card-body py-3 px-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-muted fw-semibold text-uppercase" style="font-size:.7rem;">{{ $lbl }}</div>
+                        <div class="fs-4 fw-bold" style="color:{{ $col }};">
+                            {{ $flat->where('status', $st)->count() }}
+                        </div>
+                    </div>
+                    <div style="font-size:1.8rem;opacity:.2;">
+                        {{ $st === 'pending' ? '🕐' : ($st === 'accepted' ? '✅' : '🏁') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endforeach
     </div>
 
     {{-- ── STATUS LEGEND ── --}}
@@ -57,29 +85,27 @@
             <div class="row g-0 border-bottom">
                 @foreach($week as $dayData)
                 @php
-                    $isToday    = $dayData['date'] && $dayData['date']->isToday();
+                    $isToday      = $dayData['date'] && $dayData['date']->isToday();
                     $isOtherMonth = $dayData['date'] && !$dayData['inMonth'];
-                    $bookings   = $dayData['bookings'] ?? collect();
-                    $maxShow    = 3;
-                    $extra      = max(0, $bookings->count() - $maxShow);
+                    $bookings     = $dayData['bookings'] ?? collect();
+                    $maxShow      = 3;
+                    $extra        = max(0, $bookings->count() - $maxShow);
                 @endphp
                 <div class="col border-end cal-cell {{ $isToday ? 'today-cell' : '' }} {{ $isOtherMonth ? 'other-month' : '' }}"
-                     style="min-height:115px;padding:6px 7px;vertical-align:top;">
+                     style="min-height:115px;padding:6px 7px;">
 
                     @if($dayData['date'])
-                    {{-- Day number --}}
                     <div class="d-flex align-items-center justify-content-between mb-1">
                         <span class="day-num {{ $isToday ? 'today-badge' : '' }}">
                             {{ $dayData['date']->format('j') }}
                         </span>
                         @if($bookings->count() > 0)
-                        <span class="badge rounded-pill" style="background:#1363C620;color:#1363C6;font-size:0.65rem;">
+                        <span class="badge rounded-pill" style="background:#1363C620;color:#1363C6;font-size:.65rem;">
                             {{ $bookings->count() }}
                         </span>
                         @endif
                     </div>
 
-                    {{-- Booking pills --}}
                     @foreach($bookings->take($maxShow) as $booking)
                     @php
                         $colors = [
@@ -99,7 +125,6 @@
                          data-id="{{ $booking->id }}"
                          data-patient="{{ $booking->patient_name }}"
                          data-phone="{{ $booking->patient_phone }}"
-                         data-doctor="{{ $booking->doctor_name ?? 'Unassigned' }}"
                          data-date="{{ \Carbon\Carbon::parse($booking->booking_date)->format('d M Y') }}"
                          data-time="{{ $booking->start_time ? \Carbon\Carbon::parse($booking->start_time)->format('h:i A') : '—' }}"
                          data-status="{{ $booking->status }}"
@@ -107,20 +132,16 @@
                          data-token="{{ $booking->action_token }}"
                          style="background:{{ $bg }};border-left:3px solid {{ $tc }};border-radius:4px;padding:2px 6px;cursor:pointer;font-size:0.7rem;color:{{ $tc }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                         <span style="font-weight:600;">{{ $booking->start_time ? \Carbon\Carbon::parse($booking->start_time)->format('h:i A') : '' }}</span>
-                        {{ Str::limit($booking->patient_name, 14) }}
+                        {{ Str::limit($booking->patient_name, 16) }}
                     </div>
                     @endforeach
 
                     @if($extra > 0)
-                    <div class="text-muted" style="font-size:0.68rem;padding-left:4px;cursor:pointer;"
-                         data-bs-toggle="modal" data-bs-target="#dayModal"
-                         data-date="{{ $dayData['date']->format('Y-m-d') }}"
-                         data-label="{{ $dayData['date']->format('d M Y') }}"
+                    <div class="text-muted" style="font-size:.68rem;padding-left:4px;cursor:pointer;"
                          onclick="loadDayBookings('{{ $dayData['date']->format('Y-m-d') }}', '{{ $dayData['date']->format('d M Y') }}')">
                         +{{ $extra }} more
                     </div>
                     @endif
-
                     @endif
                 </div>
                 @endforeach
@@ -158,14 +179,14 @@
                     </div>
                     <div class="col-6">
                         <div class="detail-block">
-                            <div class="detail-label">👨‍⚕️ Doctor</div>
-                            <div class="detail-val" id="modalDoctor"></div>
+                            <div class="detail-label">📱 Phone</div>
+                            <div class="detail-val" id="modalPhone"></div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="detail-block">
-                            <div class="detail-label">📱 Phone</div>
-                            <div class="detail-val" id="modalPhone"></div>
+                            <div class="detail-label">Status</div>
+                            <div id="modalStatus"></div>
                         </div>
                     </div>
                     <div class="col-12">
@@ -174,17 +195,11 @@
                             <div class="detail-val" id="modalCause"></div>
                         </div>
                     </div>
-                    <div class="col-12">
-                        <div class="detail-block">
-                            <div class="detail-label">Status</div>
-                            <div id="modalStatus"></div>
-                        </div>
-                    </div>
                 </div>
             </div>
             <div class="modal-footer border-0 pt-0">
-                <a id="modalViewLink" href="#" class="btn btn-sm" style="background:#1363C6;color:#fff;">
-                    View Full Booking →
+                <a href="{{ route('doctor.overall_bookings') }}" class="btn btn-sm" style="background:#1363C6;color:#fff;">
+                    View All Bookings →
                 </a>
                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
             </div>
@@ -213,26 +228,20 @@
 .other-month { background: #fafafa; }
 .other-month .day-num { color: #c0c0c0; }
 .today-cell { background: #eff6ff !important; }
-.day-num { font-size: .82rem; font-weight: 600; color: #374151; display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%; }
-.today-badge { background: #1363C6; color: #fff !important; }
+.day-num { font-size:.82rem;font-weight:600;color:#374151;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%; }
+.today-badge { background:#1363C6;color:#fff !important; }
 .booking-pill:hover { filter: brightness(.95); }
-.detail-block { background:#f8fafc; border-radius:8px; padding:8px 10px; }
-.detail-label { font-size:.7rem; color:#94a3b8; font-weight:600; text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px; }
-.detail-val { font-size:.85rem; font-weight:600; color:#1e293b; }
+.detail-block { background:#f8fafc;border-radius:8px;padding:8px 10px; }
+.detail-label { font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px; }
+.detail-val { font-size:.85rem;font-weight:600;color:#1e293b; }
 </style>
 
 <script>
 const statusColors = {
-    pending:     '#f59e0b',
-    accepted:    '#10b981',
-    completed:   '#1363C6',
-    rejected:    '#ef4444',
-    cancelled:   '#6b7280',
-    rescheduled: '#8b5cf6',
-    no_show:     '#f97316',
+    pending:'#f59e0b', accepted:'#10b981', completed:'#1363C6',
+    rejected:'#ef4444', cancelled:'#6b7280', rescheduled:'#8b5cf6', no_show:'#f97316'
 };
 
-// Populate booking detail modal
 document.getElementById('bookingModal').addEventListener('show.bs.modal', function (e) {
     const btn = e.relatedTarget;
     if (!btn || !btn.dataset.id) return;
@@ -240,42 +249,34 @@ document.getElementById('bookingModal').addEventListener('show.bs.modal', functi
     document.getElementById('modalToken').textContent       = 'Ref: ' + btn.dataset.token;
     document.getElementById('modalDate').textContent        = btn.dataset.date;
     document.getElementById('modalTime').textContent        = btn.dataset.time;
-    document.getElementById('modalDoctor').textContent      = btn.dataset.doctor;
     document.getElementById('modalPhone').textContent       = btn.dataset.phone;
     document.getElementById('modalCause').textContent       = btn.dataset.cause;
-
-    const st    = btn.dataset.status;
+    const st = btn.dataset.status;
     const color = statusColors[st] || '#64748b';
     document.getElementById('modalStatus').innerHTML =
         `<span class="badge" style="background:${color}20;color:${color};border:1px solid ${color}40;font-size:.78rem;padding:4px 10px;border-radius:20px;">${st.charAt(0).toUpperCase()+st.slice(1).replace('_',' ')}</span>`;
-
-    document.getElementById('modalViewLink').href = '/hospital_admin/overall_bookings';
 });
 
-// Load day overflow bookings
 const allBookings = @json($allBookings);
 
 function loadDayBookings(date, label) {
     document.getElementById('dayModalLabel').textContent = label;
-    const day = allBookings.filter(b => b.booking_date === date);
+    const modal = new bootstrap.Modal(document.getElementById('dayModal'));
+    modal.show();
+    const day  = allBookings.filter(b => b.booking_date === date);
     const body = document.getElementById('dayModalBody');
-
     if (!day.length) { body.innerHTML = '<div class="text-center text-muted py-3">No bookings</div>'; return; }
-
-    const colors = { pending:'#f59e0b',accepted:'#10b981',completed:'#1363C6',rejected:'#ef4444',cancelled:'#6b7280',rescheduled:'#8b5cf6',no_show:'#f97316' };
-
     body.innerHTML = day.map(b => {
-        const c = colors[b.status] || '#64748b';
-        const time = b.start_time ? new Date('1970-01-01T' + b.start_time).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) : '—';
+        const c    = statusColors[b.status] || '#64748b';
+        const time = b.start_time ? new Date('1970-01-01T'+b.start_time).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) : '—';
         return `<div class="d-flex align-items-center gap-2 p-2 mb-1 rounded" style="background:${c}12;border-left:3px solid ${c};cursor:pointer;"
                      data-bs-toggle="modal" data-bs-target="#bookingModal"
                      data-id="${b.id}" data-patient="${b.patient_name}" data-phone="${b.patient_phone}"
-                     data-doctor="${b.doctor_name||'Unassigned'}" data-date="${label}" data-time="${time}"
-                     data-status="${b.status}" data-cause="${b.cause||'—'}" data-token="${b.action_token}">
+                     data-date="${label}" data-time="${time}" data-status="${b.status}"
+                     data-cause="${b.cause||'—'}" data-token="${b.action_token}">
                     <div>
                         <div style="font-size:.8rem;font-weight:700;color:${c};">${time}</div>
                         <div style="font-size:.78rem;font-weight:600;">${b.patient_name}</div>
-                        <div style="font-size:.7rem;color:#94a3b8;">${b.doctor_name||'Unassigned'}</div>
                     </div>
                 </div>`;
     }).join('');
