@@ -562,6 +562,41 @@ $response = Http::timeout(10)
         ->get();
  
     $bookingsByDate = $bookings->groupBy(fn($b) => \Carbon\Carbon::parse($b->booking_date)->toDateString());
+
+    //Median baseline for current visible month
+    $monthDayCounts = [];
+    $monthCursor = $currentMonth->copy()->startOfMonth();
+    $monthEnd    = $currentMonth->copy()->endOfMonth();
+
+    while ($monthCursor <= $monthEnd) {
+        $dateStr = $monthCursor->toDateString();
+        $count   = $bookingsByDate->get($dateStr, collect())->count();
+
+        if ($count > 0) {
+            $monthDayCounts[] = $count;
+        }
+
+        $monthCursor->addDay();
+    }
+
+    sort($monthDayCounts);
+
+    $medianDailyBookings = 0;
+
+    $countOfBookedDays = count($monthDayCounts);
+
+    if ($countOfBookedDays > 0) {
+        $middle = intdiv($countOfBookedDays, 2);
+
+        if ($countOfBookedDays % 2 === 0) {
+            $medianDailyBookings = (int) ceil(
+                ($monthDayCounts[$middle - 1] + $monthDayCounts[$middle]) / 2
+            );
+        } else {
+            $medianDailyBookings = $monthDayCounts[$middle];
+        }
+    }
+
  
     $weeks  = [];
     $cursor = $startDate->copy();
@@ -570,10 +605,12 @@ $response = Http::timeout(10)
         $week = [];
         for ($i = 0; $i < 7; $i++) {
             $dateStr = $cursor->toDateString();
+            $dayBookings = $bookingsByDate->get($dateStr, collect());
             $week[] = [
                 'date'     => $cursor->copy(),
                 'inMonth'  => $cursor->month === $currentMonth->month,
-                'bookings' => $bookingsByDate->get($dateStr, collect()),
+                'bookings' => $dayBookings,
+                'bookingCount' => $dayBookings->count(),
             ];
             $cursor->addDay();
         }
@@ -592,7 +629,7 @@ $response = Http::timeout(10)
     ])->values();
  
     return view('doctors.calendar', compact(
-        'weeks', 'currentMonth', 'prevMonth', 'nextMonth', 'allBookings'
+        'weeks', 'currentMonth', 'prevMonth', 'nextMonth', 'allBookings', 'medianDailyBookings'
     ));
 }
   

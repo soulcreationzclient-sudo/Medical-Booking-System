@@ -88,10 +88,20 @@
                     $isToday      = $dayData['date'] && $dayData['date']->isToday();
                     $isOtherMonth = $dayData['date'] && !$dayData['inMonth'];
                     $bookings     = $dayData['bookings'] ?? collect();
+                    $bookingCount = $dayData['bookingCount'] ?? $bookings->count();
                     $maxShow      = 3;
-                    $extra        = max(0, $bookings->count() - $maxShow);
+                    $extra        = max(0, $bookingCount - $maxShow);
+
+                    if ($bookingCount === 0) {
+                        $heatClass = 'heat-none';
+                    } elseif ($bookingCount <= $medianDailyBookings) {
+                        $heatClass = 'heat-normal';
+                    } else {
+                        $heatClass = 'heat-busy';
+                    }
+
                 @endphp
-                <div class="col border-end cal-cell {{ $isToday ? 'today-cell' : '' }} {{ $isOtherMonth ? 'other-month' : '' }}"
+                <div class="col border-end cal-cell {{ $heatClass }} {{ $isToday ? 'today-cell' : '' }} {{ $isOtherMonth ? 'other-month' : '' }}"
                      style="min-height:115px;padding:6px 7px;">
 
                     @if($dayData['date'])
@@ -99,9 +109,9 @@
                         <span class="day-num {{ $isToday ? 'today-badge' : '' }}">
                             {{ $dayData['date']->format('j') }}
                         </span>
-                        @if($bookings->count() > 0)
+                        @if($bookingCount > 0)
                         <span class="badge rounded-pill" style="background:#1363C620;color:#1363C6;font-size:.65rem;">
-                            {{ $bookings->count() }}
+                            {{ $bookingCount }}
                         </span>
                         @endif
                     </div>
@@ -223,11 +233,14 @@
 </div>
 
 <style>
-.cal-cell { transition: background .15s; }
-.cal-cell:hover { background: #f0f7ff; }
-.other-month { background: #fafafa; }
+.cal-cell { transition: background-color .18s ease, box-shadow .18s ease; }
+.cal-cell:hover { box-shadow: inset 0 0 0 1px rgba(19, 99, 198, 0.08); }
+.heat-none { background: #ffffff; }
+.heat-normal { background: #f1f5f9; }
+.heat-busy { background: #e0e7ff; }
+.other-month { background: #fafafa !important; }
 .other-month .day-num { color: #c0c0c0; }
-.today-cell { background: #eff6ff !important; }
+.today-cell { background: #dbeafe !important; box-shadow: inset 0 0 0 2px rgba(19, 99, 198, 0.12);}
 .day-num { font-size:.82rem;font-weight:600;color:#374151;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%; }
 .today-badge { background:#1363C6;color:#fff !important; }
 .booking-pill:hover { filter: brightness(.95); }
