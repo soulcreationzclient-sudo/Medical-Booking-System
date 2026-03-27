@@ -77,6 +77,7 @@ Route::middleware(['auth', 'role:hospital_admin'])
             Route::get('/in_person_form',               'in_person_form')->name('inpersonform');
             Route::post('/bookings/ajax_store',         'ajax_store')->name('inperson');
             Route::get('/overall_bookings',             'overall_bookings')->name('overall_bookings');
+            Route::get('/calendar', 'calendar')->name('calendar');
             Route::post('/bookings/{id}/reschedule',    'reschedule')->name('bookings.reschedule');
             Route::post('/bookings/{id}/update-status', 'update_status')->name('bookings.updatestatus');
             Route::post('/bookings/{id}/assign',        'assignDoctor');
@@ -150,6 +151,7 @@ Route::middleware(['auth', 'role:doctor'])
             Route::get('/schedule',                      'schedule')->name('schedule');
             Route::post('/doctor/schedule/save',         'schedule_save')->name('schedule.save');
             Route::get('/overall_bookings',              'overall_bookings')->name('overall_bookings');
+            Route::get('/calendar', 'calendar')->name('calendar');
             Route::post('/bookings/{id}/update-status',  'update_status')->name('bookings.updatestatus');
             Route::post('/add_slot',                     'add_slot')->name('add_slot');
             Route::post('/bookings/{id}/reschedule',     'reschedule')->name('bookings.reschedule');

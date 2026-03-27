@@ -542,5 +542,58 @@ $response = Http::timeout(10)
             ]);
         }
     }
+    public function calendar(Request $request)
+{
+    $doctorId = auth()->user()->doctor_id;
+ 
+    $currentMonth = $request->filled('month')
+        ? \Carbon\Carbon::parse($request->month . '-01')
+        : now()->startOfMonth();
+ 
+    $prevMonth = $currentMonth->copy()->subMonth()->format('Y-m');
+    $nextMonth = $currentMonth->copy()->addMonth()->format('Y-m');
+ 
+    $startDate = $currentMonth->copy()->startOfMonth()->startOfWeek(\Carbon\Carbon::SUNDAY);
+    $endDate   = $currentMonth->copy()->endOfMonth()->endOfWeek(\Carbon\Carbon::SATURDAY);
+ 
+    $bookings = \App\Models\Booking::where('doctor_id', $doctorId)
+        ->whereBetween('booking_date', [$startDate->toDateString(), $endDate->toDateString()])
+        ->orderBy('start_time')
+        ->get();
+ 
+    $bookingsByDate = $bookings->groupBy(fn($b) => \Carbon\Carbon::parse($b->booking_date)->toDateString());
+ 
+    $weeks  = [];
+    $cursor = $startDate->copy();
+ 
+    while ($cursor <= $endDate) {
+        $week = [];
+        for ($i = 0; $i < 7; $i++) {
+            $dateStr = $cursor->toDateString();
+            $week[] = [
+                'date'     => $cursor->copy(),
+                'inMonth'  => $cursor->month === $currentMonth->month,
+                'bookings' => $bookingsByDate->get($dateStr, collect()),
+            ];
+            $cursor->addDay();
+        }
+        $weeks[] = $week;
+    }
+ 
+    $allBookings = $bookings->map(fn($b) => [
+        'id'           => $b->id,
+        'patient_name' => $b->patient_name,
+        'patient_phone'=> $b->patient_phone,
+        'booking_date' => \Carbon\Carbon::parse($b->booking_date)->toDateString(),
+        'start_time'   => $b->start_time,
+        'status'       => $b->status,
+        'cause'        => $b->cause,
+        'action_token' => $b->action_token,
+    ])->values();
+ 
+    return view('doctors.calendar', compact(
+        'weeks', 'currentMonth', 'prevMonth', 'nextMonth', 'allBookings'
+    ));
+}
   
 }

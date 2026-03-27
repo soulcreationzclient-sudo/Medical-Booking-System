@@ -86,6 +86,12 @@
                             Schedule
                         </a>
                     </li>
+                    <li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('doctor.calendar') ? 'active' : '' }}"
+       href="{{ route('doctor.calendar') }}">
+        Calendar
+    </a>
+</li>
                 @endcan
 
                 {{-- SUPER ADMIN --}}
@@ -156,6 +162,12 @@
                             Overall Bookings
                         </a>
                     </li>
+                    <li class="nav-item">
+    <a class="nav-link {{ request()->routeIs('hospital_admin.calendar') ? 'active' : '' }}"
+       href="{{ route('hospital_admin.calendar') }}">
+        Calendar
+    </a>
+</li>
 
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('hospital_admin.patients*') ? 'active' : '' }}"

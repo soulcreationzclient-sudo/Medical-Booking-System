@@ -794,34 +794,48 @@ class Hospitaladmincontroller extends Controller
         ]);
 
         // Mirror income entries into hospital financial ledger
-        if (in_array($request->type, ['consultation', 'treatment', 'operation', 'custom_profit'])) {
-            HospitalFinancial::create([
-                'hospital_id' => $hospitalId,
-                'type'        => 'profit',
-                'description' => "Patient #{$id}: " . $request->description,
-                'amount'      => $request->amount,
-                'entry_date'  => now()->toDateString(),
-                'created_by'  => auth()->id(),
-            ]);
-        }
+        // if (in_array($request->type, ['consultation', 'treatment', 'operation', 'custom_profit'])) {
+        //     HospitalFinancial::create([
+        //         'hospital_id' => $hospitalId,
+        //         'type'        => 'profit',
+        //         'description' => "Patient #{$id}: " . $request->description,
+        //         'amount'      => $request->amount,
+        //         'entry_date'  => now()->toDateString(),
+        //         'created_by'  => auth()->id(),
+        //     ]);
+        // }
 
         return back()->with('success', 'Billing entry added.');
     }
 
     public function patient_mark_paid(Request $request, $id, $entryId)
-    {
-        $entry = PatientBillingEntry::where('id', $entryId)
-            ->where('patient_id', $id)
-            ->where('hospital_id', auth()->user()->hospital_id)
-            ->firstOrFail();
+{
+    $entry = PatientBillingEntry::where('id', $entryId)
+        ->where('patient_id', $id)
+        ->where('hospital_id', auth()->user()->hospital_id)
+        ->firstOrFail();
 
-        $entry->update([
-            'is_paid' => true,
-            'paid_at' => now(),
+    $entry->update([
+        'is_paid' => true,
+        'paid_at' => now(),
+    ]);
+
+    // ── Auto-add to Financial Ledger as Income ──────────────
+    $incomTypes = ['consultation', 'medicine', 'treatment', 'operation'];
+
+    if (in_array($entry->type, $incomTypes)) {
+        HospitalFinancial::create([
+            'hospital_id' => auth()->user()->hospital_id,
+            'type'        => 'profit',
+            'description' => "Patient #{$id}: " . $entry->description,
+            'amount'      => $entry->amount,
+            'entry_date'  => now()->toDateString(),
+            'created_by'  => auth()->id(),
         ]);
-
-        return response()->json(['success' => true, 'message' => 'Marked as paid.']);
     }
+
+    return response()->json(['success' => true, 'message' => 'Marked as paid.']);
+}
 
     public function patient_billing_delete($id, $entryId)
     {
@@ -1098,4 +1112,71 @@ class Hospitaladmincontroller extends Controller
             ]);
         }
     }
+    public function calendar(Request $request)
+{
+    $hospitalId = auth()->user()->hospital_id;
+ 
+    // Determine which month to show
+    $currentMonth = $request->filled('month')
+        ? \Carbon\Carbon::parse($request->month . '-01')
+        : now()->startOfMonth();
+ 
+    $prevMonth = $currentMonth->copy()->subMonth()->format('Y-m');
+    $nextMonth = $currentMonth->copy()->addMonth()->format('Y-m');
+ 
+    // Fetch ALL bookings for this month (± overflow days)
+    $startDate = $currentMonth->copy()->startOfMonth()->startOfWeek(\Carbon\Carbon::SUNDAY);
+    $endDate   = $currentMonth->copy()->endOfMonth()->endOfWeek(\Carbon\Carbon::SATURDAY);
+ 
+    $bookings = DB::table('bookings as b')
+        ->leftJoin('doctors as d', 'd.id', '=', 'b.doctor_id')
+        ->where('b.hospital_id', $hospitalId)
+        ->whereBetween('b.booking_date', [$startDate->toDateString(), $endDate->toDateString()])
+        ->select(
+            'b.id', 'b.patient_name', 'b.patient_phone',
+            'b.booking_date', 'b.start_time', 'b.status',
+            'b.cause', 'b.action_token',
+            'd.name as doctor_name'
+        )
+        ->orderBy('b.start_time')
+        ->get();
+ 
+    // Group bookings by date string for fast lookup
+    $bookingsByDate = $bookings->groupBy('booking_date');
+ 
+    // Build weeks array for the blade template
+    $weeks = [];
+    $cursor = $startDate->copy();
+ 
+    while ($cursor <= $endDate) {
+        $week = [];
+        for ($i = 0; $i < 7; $i++) {
+            $dateStr = $cursor->toDateString();
+            $week[] = [
+                'date'     => $cursor->copy(),
+                'inMonth'  => $cursor->month === $currentMonth->month,
+                'bookings' => $bookingsByDate->get($dateStr, collect()),
+            ];
+            $cursor->addDay();
+        }
+        $weeks[] = $week;
+    }
+ 
+    // Pass flat list for JS day-overflow modal
+    $allBookings = $bookings->map(fn($b) => [
+        'id'           => $b->id,
+        'patient_name' => $b->patient_name,
+        'patient_phone'=> $b->patient_phone,
+        'booking_date' => $b->booking_date,
+        'start_time'   => $b->start_time,
+        'status'       => $b->status,
+        'cause'        => $b->cause,
+        'action_token' => $b->action_token,
+        'doctor_name'  => $b->doctor_name,
+    ])->values();
+ 
+    return view('hospital_admin.calendar', compact(
+        'weeks', 'currentMonth', 'prevMonth', 'nextMonth', 'allBookings'
+    ));
+}
 }
