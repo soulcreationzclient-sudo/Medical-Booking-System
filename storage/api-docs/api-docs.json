@@ -1,0 +1,876 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Medical Booking System API",
+        "description": "REST API for the Medical Booking System.",
+        "contact": {
+            "email": "admin@yourhospital.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://127.0.0.1:8000",
+            "description": "Local server"
+        }
+    ],
+    "paths": {
+        "/api/v1": {},
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get your API token",
+                "description": "Login with email and password to receive your API token. Use this token as `Authorization: Bearer {token}` on all protected endpoints.",
+                "operationId": "f2534d1e69ffbeff00144a7287b62bbe",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "example": "admin@hospital.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "type": "string",
+                                            "example": "ABC123XYZ"
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Dr. Smith"
+                                        },
+                                        "role": {
+                                            "type": "string",
+                                            "example": "hospital_admin"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/me": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get current authenticated user info",
+                "operationId": "92980d698287402f35ad2941fa543db0",
+                "responses": {
+                    "200": {
+                        "description": "Current user",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "email": {
+                                            "type": "string"
+                                        },
+                                        "role": {
+                                            "type": "string"
+                                        },
+                                        "hospital_id": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bookings": {
+            "get": {
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "List all bookings for the hospital",
+                "operationId": "e1b5ea5257f8f23cb7863dd78e44df2c",
+                "parameters": [
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "Filter by date (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status (pending/accepted/etc.)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "doctor_id",
+                        "in": "query",
+                        "description": "Filter by doctor ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of bookings",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Booking"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Create a new booking (in-person / admin)",
+                "operationId": "46b092e0866a0d48225d1dd0e5d9f22f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "patient_name",
+                                    "patient_phone",
+                                    "doctor_id",
+                                    "booking_date",
+                                    "start_time"
+                                ],
+                                "properties": {
+                                    "patient_name": {
+                                        "type": "string",
+                                        "example": "Vijay Kumar"
+                                    },
+                                    "patient_phone": {
+                                        "type": "string",
+                                        "example": "919994780436"
+                                    },
+                                    "patient_email": {
+                                        "type": "string",
+                                        "example": "vijay@email.com"
+                                    },
+                                    "doctor_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "booking_date": {
+                                        "type": "string",
+                                        "example": "2026-03-29"
+                                    },
+                                    "start_time": {
+                                        "type": "string",
+                                        "example": "10:30"
+                                    },
+                                    "age": {
+                                        "type": "integer",
+                                        "example": 30
+                                    },
+                                    "cause": {
+                                        "type": "string",
+                                        "example": "Fever and headache"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Booking created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "booking_code": {
+                                            "type": "string",
+                                            "example": "BK-XK92MPLR"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bookings/{id}": {
+            "get": {
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Get a single booking by ID",
+                "operationId": "4ce45cf16c092ff3ac78bd9da2d5db20",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Booking details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Booking"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bookings/{id}/status": {
+            "put": {
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Update booking status (accept / reject / complete etc.)",
+                "operationId": "5fac768bbdbf6cae33dd8e36d490d396",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "accepted",
+                                            "rejected",
+                                            "cancelled",
+                                            "completed",
+                                            "no_show"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated"
+                    },
+                    "404": {
+                        "description": "Booking not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bookings/{id}/reschedule": {
+            "post": {
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Reschedule a booking to a new date and time",
+                "operationId": "0ff3ca86700180486536f39bf550f29e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "new_date",
+                                    "new_time"
+                                ],
+                                "properties": {
+                                    "new_date": {
+                                        "type": "string",
+                                        "example": "2026-04-01"
+                                    },
+                                    "new_time": {
+                                        "type": "string",
+                                        "example": "14:30"
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "Doctor unavailable"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Rescheduled successfully"
+                    },
+                    "404": {
+                        "description": "Booking not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/bookings/status/{code}": {
+            "get": {
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Get booking status by booking code (public — no auth needed)",
+                "operationId": "6cccf4fb0130c10daba2174f5e52301f",
+                "parameters": [
+                    {
+                        "name": "code",
+                        "in": "path",
+                        "description": "Booking code e.g. BK-XK92MPLR",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Booking status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Booking"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                }
+            }
+        },
+        "/api/v1/doctors": {
+            "get": {
+                "tags": [
+                    "Doctors"
+                ],
+                "summary": "List all active doctors for the hospital",
+                "operationId": "adb5a973c18fb7dda488cdacc1f6d2a1",
+                "responses": {
+                    "200": {
+                        "description": "List of doctors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Doctor"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/doctors/{id}/slots": {
+            "get": {
+                "tags": [
+                    "Doctors"
+                ],
+                "summary": "Get available time slots for a doctor on a given date",
+                "operationId": "93d9c339f96c2f0bf95f193fa842863a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Doctor ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "Date in YYYY-MM-DD format",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Available slots",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "date": {
+                                            "type": "string"
+                                        },
+                                        "doctor_id": {
+                                            "type": "integer"
+                                        },
+                                        "slots": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "start": {
+                                                        "type": "string",
+                                                        "example": "09:00:00"
+                                                    },
+                                                    "end": {
+                                                        "type": "string",
+                                                        "example": "09:10:00"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Doctor not found or not available on this day"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/patients": {
+            "get": {
+                "tags": [
+                    "Patients"
+                ],
+                "summary": "List all patients who have bookings at this hospital",
+                "operationId": "ea37b8a5eca309de8dddd19f32fe0b76",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by name or phone",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of patients",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Patient"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/patients/{id}": {
+            "get": {
+                "tags": [
+                    "Patients"
+                ],
+                "summary": "Get a patient's full profile including booking history",
+                "operationId": "80b6d6f007f7a09e8b70d533a1088ce6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Patient profile with bookings"
+                    },
+                    "404": {
+                        "description": "Patient not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/patients/lookup": {
+            "get": {
+                "tags": [
+                    "Patients"
+                ],
+                "summary": "Look up a patient by phone number",
+                "operationId": "1ddeba082d3a0705ec8aa0419b5d0359",
+                "parameters": [
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "Phone number with country code",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Patient found or not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "found": {
+                                            "type": "boolean"
+                                        },
+                                        "patient": {
+                                            "$ref": "#/components/schemas/Patient"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/webhook/speedbots": {
+            "post": {
+                "tags": [
+                    "Webhook"
+                ],
+                "summary": "Receive WhatsApp delivery status callbacks from Speedbots",
+                "description": "Speedbots calls this endpoint to report whether a WhatsApp message was delivered or failed. No auth required — secured by hospital token in payload.",
+                "operationId": "75e83afaa84dc1285e8c216956a3a829",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "919994780436"
+                                    },
+                                    "flow_id": {
+                                        "type": "string",
+                                        "example": "1774503294935"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "delivered",
+                                            "failed",
+                                            "read"
+                                        ],
+                                        "example": "delivered"
+                                    },
+                                    "hospital_token": {
+                                        "description": "The hospital's Speedbots API token to identify which hospital this is for",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Webhook received"
+                    },
+                    "400": {
+                        "description": "Invalid payload"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Booking": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "action_token": {
+                        "type": "string",
+                        "example": "BK-XK92MPLR"
+                    },
+                    "patient_name": {
+                        "type": "string"
+                    },
+                    "patient_phone": {
+                        "type": "string"
+                    },
+                    "booking_date": {
+                        "type": "string",
+                        "example": "2026-03-29"
+                    },
+                    "start_time": {
+                        "type": "string",
+                        "example": "10:30:00"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "pending"
+                    },
+                    "doctor_name": {
+                        "type": "string"
+                    },
+                    "cause": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "Doctor": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "specialization": {
+                        "type": "string"
+                    },
+                    "qualification": {
+                        "type": "string"
+                    },
+                    "experience_years": {
+                        "type": "integer"
+                    },
+                    "consultation_fee": {
+                        "type": "number"
+                    }
+                },
+                "type": "object"
+            },
+            "Patient": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "phone_no": {
+                        "type": "string"
+                    },
+                    "age": {
+                        "type": "integer"
+                    },
+                    "gender": {
+                        "type": "string"
+                    },
+                    "nationality": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "Your api_code from the users table. Pass as: Authorization: Bearer {token}",
+                "bearerFormat": "API Token",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Authentication"
+        },
+        {
+            "name": "Bookings",
+            "description": "Booking management"
+        },
+        {
+            "name": "Doctors",
+            "description": "Doctor management"
+        },
+        {
+            "name": "Patients",
+            "description": "Patient records"
+        },
+        {
+            "name": "Webhook",
+            "description": "Speedbots webhooks"
+        }
+    ]
+}
