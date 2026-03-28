@@ -268,7 +268,7 @@ document.getElementById('patient_phone').addEventListener('blur', function () {
     const phone = this.value.trim();
     if (!phone) return;
 
-    fetch(`/booking/lookup-patient?phone=${encodeURIComponent(phone)}`, {
+    fetch(`/booking/lookup-patient?phone=${encodeURIComponent(phone)}&hospital_id={{ auth()->user()->hospital_id }}`, {
         headers: { 'Accept': 'application/json',
                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
     })

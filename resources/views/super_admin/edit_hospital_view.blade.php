@@ -82,7 +82,8 @@
                                 @enderror
                             </div>
 
-                             <div class="col-md-6 mb-3">
+                            {{-- OLD single flow_id — kept as comment
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label fw-semibold">Flow id</label>
                                 <input type="text" name="flow_id"
                                     class="form-control @error('flow_id') is-invalid @enderror"
@@ -91,6 +92,78 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+                            --}}
+
+                            {{-- ── Speedbots WhatsApp Integration ── --}}
+                            <div class="col-md-12 mb-2">
+                                <hr>
+                                <p class="fw-bold mb-1" style="color:#1363C6;">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="18" style="vertical-align:-3px;margin-right:4px;">
+                                    Speedbots WhatsApp Integration
+                                </p>
+                                <small class="text-muted">These fields connect this hospital to Speedbots for automated WhatsApp notifications.</small>
+                            </div>
+
+                            {{-- API Token --}}
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-semibold">Speedbots API Token</label>
+                                <input type="text" name="token"
+                                    class="form-control @error('token') is-invalid @enderror"
+                                    placeholder="e.g. 1884037.BeCDERtxD9WluYHcDHQn6m4RwEnSif4"
+                                    value="{{ old('token', $data['token'] ?? '') }}">
+                                @error('token')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Accept Flow ID --}}
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Flow ID — Booking Accepted</label>
+                                <input type="text" name="accept_flow_id"
+                                    class="form-control @error('accept_flow_id') is-invalid @enderror"
+                                    placeholder="e.g. 1774503294935"
+                                    value="{{ old('accept_flow_id', $data['accept_flow_id'] ?? '') }}">
+                                @error('accept_flow_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Reject Flow ID --}}
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Flow ID — Booking Rejected</label>
+                                <input type="text" name="reject_flow_id"
+                                    class="form-control @error('reject_flow_id') is-invalid @enderror"
+                                    placeholder="e.g. 1774503355823"
+                                    value="{{ old('reject_flow_id', $data['reject_flow_id'] ?? '') }}">
+                                @error('reject_flow_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Reschedule Flow ID --}}
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Flow ID — Booking Rescheduled</label>
+                                <input type="text" name="reschedule_flow_id"
+                                    class="form-control @error('reschedule_flow_id') is-invalid @enderror"
+                                    placeholder="e.g. 1774503413964"
+                                    value="{{ old('reschedule_flow_id', $data['reschedule_flow_id'] ?? '') }}">
+                                @error('reschedule_flow_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- DateTime Custom Field ID --}}
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">Custom Field ID — Reschedule Date/Time</label>
+                                <input type="text" name="datetime_field_id"
+                                    class="form-control @error('datetime_field_id') is-invalid @enderror"
+                                    placeholder="e.g. 244056"
+                                    value="{{ old('datetime_field_id', $data['datetime_field_id'] ?? '') }}">
+                                @error('datetime_field_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-12 mb-2"><hr></div>
 
                             {{-- City --}}
                             <div class="col-md-6 mb-3">

@@ -60,7 +60,21 @@ class Bookingcontroller extends Controller
     // ─────────────────────────────────────────────────────────
     public function lookupPatient(Request $request)
     {
-        $phone   = $request->query('phone');
+        $phone      = $request->query('phone');
+        $hospitalId = $request->query('hospital_id'); // optional — sent by in-person form
+
+        if ($hospitalId) {
+            // In-person form: only return patient if they have a booking under this hospital
+            $exists = DB::table('bookings')
+                ->where('patient_phone', $phone)
+                ->where('hospital_id', $hospitalId)
+                ->exists();
+
+            if (!$exists) {
+                return response()->json(['found' => false]);
+            }
+        }
+
         $patient = DB::table('patients')->where('phone_no', $phone)->first();
 
         if ($patient) {
@@ -134,7 +148,36 @@ class Bookingcontroller extends Controller
             'created_at'    => now(),
             'updated_at'    => now(),
         ]);
+        try {
+    $hospital = \App\Models\Hospital::find($doctor->hospital_id);
 
+    if ($hospital && !empty($hospital->token)) {
+        $cleanPhone = preg_replace('/[^0-9+]/', '', $request->patient_phone);
+
+        if (!empty($cleanPhone)) {
+
+            $client = new \GuzzleHttp\Client([
+                'verify' => false, // SSL bypass
+            ]);
+
+            $client->post('https://app.speedbots.io/api/contacts', [
+                'headers' => [
+                    'X-ACCESS-TOKEN' => $hospital->token,
+                    'Content-Type'   => 'application/json',
+                    'accept'         => 'application/json',
+                ],
+                'json' => [
+                    'phone' => $cleanPhone,
+                ],
+            ]);
+        }
+    }
+} catch (\Exception $e) {
+    \Illuminate\Support\Facades\Log::error('Speedbots contact failed', [
+        'phone' => $request->patient_phone,
+        'error' => $e->getMessage(),
+    ]);
+}
         // 📧 SEND EMAIL (uncomment when ready)
         // Mail::to($request->patient_email)->send(
         //     new BookingVerificationMail($actionToken)

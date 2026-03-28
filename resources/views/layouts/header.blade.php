@@ -184,6 +184,14 @@
                         </a>
                     </li>
 
+                    {{-- ✅ WHATSAPP SETTINGS --}}
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('hospital_admin.speedbots*') ? 'active' : '' }}"
+                           href="{{ route('hospital_admin.speedbots.settings') }}">
+                             WhatsApp
+                        </a>
+                    </li>
+
                 @endcan
 
             </ul>

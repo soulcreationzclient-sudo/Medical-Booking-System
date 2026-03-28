@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Storage;
 
 Auth::routes();
 
+Route::get('/', fn() => redirect()->route('login'));
+
 // ══════════════════════════════════════════════════════════
 //  SHARED
 // ══════════════════════════════════════════════════════════
@@ -97,6 +99,10 @@ Route::middleware(['auth', 'role:hospital_admin'])
             Route::get('/financials',          'financials_index')->name('financials.index');
             Route::post('/financials',         'financial_store')->name('financials.store');
             Route::delete('/financials/{id}',  'financial_delete')->name('financials.delete');
+
+            // ── Speedbots Settings ──────────────────────
+            Route::get('/speedbots-settings',         'speedbots_settings')->name('speedbots.settings');
+            Route::post('/speedbots-settings/update', 'speedbots_settings_update')->name('speedbots.settings.update');
 
             // ── Patients ────────────────────────────────
             // ⚠️ CRITICAL ORDER — static before wildcard:

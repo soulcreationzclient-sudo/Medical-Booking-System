@@ -43,24 +43,33 @@ class Superadmincontroller extends Controller
     public function add_hospital_form()
     {
         $fields = [
-            'email' => ['type' => 'text', 'label' => 'Email'],
-            'password' => ['type' => 'password', 'label' => 'Password'],
-            'hospital_name' => ['type' => 'text', 'label' => 'Hospital name'],
-            'flow_id'=>['type'=>'text','label'=>'Flow Id'],
-            'hospital_phone' => ['type' => 'tel', 'label' => 'Hospital phone'],
-            'admin_name' => ['type' => 'text'],
-            'admin_phone' => ['type' => 'tel', 'label' => 'Admin phone'],
-            'address_line' => ['type' => 'textarea', 'col' => 'col-md-12'],
-            'address_line2' => ['type' => 'textarea', 'col' => 'col-md-12'],
-            'city' => ['type' => 'text'],
-            'country' => ['type' => 'text'],
-            'db_status' => [
-                'type' => 'radio',
+            'email'          => ['type' => 'text',     'label' => 'Email'],
+            'password'       => ['type' => 'password', 'label' => 'Password'],
+            'hospital_name'  => ['type' => 'text',     'label' => 'Hospital name'],
+            'hospital_phone' => ['type' => 'tel',      'label' => 'Hospital phone'],
+            'admin_name'     => ['type' => 'text'],
+            'admin_phone'    => ['type' => 'tel',      'label' => 'Admin phone'],
+            'address_line'   => ['type' => 'textarea', 'col'   => 'col-md-12'],
+            'address_line2'  => ['type' => 'textarea', 'col'   => 'col-md-12'],
+            'city'           => ['type' => 'text'],
+            'country'        => ['type' => 'text'],
+            'db_status'      => [
+                'type'    => 'radio',
                 'options' => [0 => 'Testing', 1 => 'Production'],
-                'col' => 'col-md-12'
+                'col'     => 'col-md-12',
             ],
-            'is_active' => ['type' => 'checkbox', 'label' => 'Active'],
-            'hospital_logo' => ['type' => 'file', 'label' => 'Logo image']
+            'is_active'     => ['type' => 'checkbox', 'label' => 'Active'],
+            'hospital_logo' => ['type' => 'file',     'label' => 'Logo image'],
+
+            // ── Speedbots WhatsApp Integration ──────────
+            'token'              => ['type' => 'text', 'label' => 'Speedbots API Token',                  'col' => 'col-md-12'],
+            'accept_flow_id'     => ['type' => 'text', 'label' => 'Flow ID — Booking Accepted'],
+            'reject_flow_id'     => ['type' => 'text', 'label' => 'Flow ID — Booking Rejected'],
+            'reschedule_flow_id' => ['type' => 'text', 'label' => 'Flow ID — Booking Rescheduled'],
+            'datetime_field_id'  => ['type' => 'text', 'label' => 'Custom Field ID — Reschedule Date/Time'],
+
+            // OLD: single flow_id kept for reference
+            // 'flow_id' => ['type' => 'text', 'label' => 'Flow Id'],
         ];
         // pr($fields);
         return view('super_admin.add_hospital_form', [
@@ -113,7 +122,12 @@ class Superadmincontroller extends Controller
             'city' => 'required|string',
             'country' => 'required|string',
             'db_status' => 'required',
-            'flow_id'=>'nullable|string',
+            // OLD: 'flow_id'=>'nullable|string',
+            'token'              => 'nullable|string',
+            'accept_flow_id'     => 'nullable|string',
+            'reject_flow_id'     => 'nullable|string',
+            'reschedule_flow_id' => 'nullable|string',
+            'datetime_field_id'  => 'nullable|string',
 
             'hospital_logo' => $hospital_id
                 ? 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048'
@@ -188,8 +202,13 @@ class Superadmincontroller extends Controller
                     'city' => $request->city,
                     'country' => $request->country,
                     'db_status' => $request->db_status,
-                    'hospital_logo' => $logoPath,
-                    'flow_id'=>$request->flow_id
+                    'hospital_logo'      => $logoPath,
+                    // OLD: 'flow_id' => $request->flow_id,
+                    'token'              => $request->token,
+                    'accept_flow_id'     => $request->accept_flow_id,
+                    'reject_flow_id'     => $request->reject_flow_id,
+                    'reschedule_flow_id' => $request->reschedule_flow_id,
+                    'datetime_field_id'  => $request->datetime_field_id,
                 ]);
             } else {
                 $hospital = Hospital::create([
@@ -204,8 +223,13 @@ class Superadmincontroller extends Controller
                     'city' => $request->city,
                     'country' => $request->country,
                     'db_status' => $request->db_status,
-                    'hospital_logo' => $logoPath,
-                    'flow_id'=>$request->flow_id
+                    'hospital_logo'      => $logoPath,
+                    // OLD: 'flow_id' => $request->flow_id,
+                    'token'              => $request->token,
+                    'accept_flow_id'     => $request->accept_flow_id,
+                    'reject_flow_id'     => $request->reject_flow_id,
+                    'reschedule_flow_id' => $request->reschedule_flow_id,
+                    'datetime_field_id'  => $request->datetime_field_id,
                 ]);
             }
 
@@ -239,7 +263,12 @@ class Superadmincontroller extends Controller
                 'h.db_status as db_status',
                 'u.status as is_active',
                 'h.hospital_logo as hospital_logo',
-                'h.flow_id as flow_id'
+                // OLD: 'h.flow_id as flow_id',
+                'h.token              as token',
+                'h.accept_flow_id     as accept_flow_id',
+                'h.reject_flow_id     as reject_flow_id',
+                'h.reschedule_flow_id as reschedule_flow_id',
+                'h.datetime_field_id  as datetime_field_id'
             )
             ->first();
         // pr((array)$data);
@@ -284,7 +313,12 @@ class Superadmincontroller extends Controller
             'country'        => 'required|string',
             'db_status'      => 'required|in:0,1',
             'password'       => 'nullable|min:6',
-            'flow_id'   =>'nullable',
+            // OLD: 'flow_id' => 'nullable',
+            'token'              => 'nullable|string',
+            'accept_flow_id'     => 'nullable|string',
+            'reject_flow_id'     => 'nullable|string',
+            'reschedule_flow_id' => 'nullable|string',
+            'datetime_field_id'  => 'nullable|string',
             'hospital_logo'  => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
@@ -322,7 +356,12 @@ class Superadmincontroller extends Controller
                 'city'           => $request->city,
                 'country'        => $request->country,
                 'db_status'      => $request->db_status,
-                'flow_id'=>$request->flow_id
+                // OLD: 'flow_id' => $request->flow_id,
+                'token'              => $request->token,
+                'accept_flow_id'     => $request->accept_flow_id,
+                'reject_flow_id'     => $request->reject_flow_id,
+                'reschedule_flow_id' => $request->reschedule_flow_id,
+                'datetime_field_id'  => $request->datetime_field_id,
             ];
 
             if ($request->hasFile('hospital_logo')) {
