@@ -377,10 +377,23 @@ class Hospitaladmincontroller extends Controller
         DB::table('patients')->updateOrInsert(
             ['phone_no' => $request->patient_phone],
             [
-                'name'       => $request->patient_name,
-                'age'        => $request->age,
-                'updated_at' => now(),
-                'created_at' => now(),
+                'name'                   => $request->patient_name,
+                'age'                    => $request->age                    ?? null,
+                'gender'                 => $request->gender                 ?? null,
+                'ic_passport_no'         => $request->ic_passport_no         ?? null,
+                'dob'                    => $request->dob                    ?? null,
+                'blood_type'             => $request->blood_type             ?? null,
+                'marital_status'         => $request->marital_status         ?? null,
+                'nationality'            => $request->nationality             ?? null,
+                'address'                => $request->address                ?? null,
+                'state'                  => $request->state                  ?? null,
+                'city'                   => $request->city                   ?? null,
+                'postcode'               => $request->postcode               ?? null,
+                'country'               => $request->country                ?? null,
+                'emergency_contact_name' => $request->emergency_contact_name ?? null,
+                'emergency_contact_no'   => $request->emergency_contact_no   ?? null,
+                'updated_at'             => now(),
+                'created_at'             => now(),
             ]
         );
 
@@ -400,7 +413,7 @@ class Hospitaladmincontroller extends Controller
             'created_at'    => now(),
             'updated_at'    => now(),
         ]);
-
+        $this->createSpeedbotsContact($request->patient_phone, Auth::user()->hospital->id);
         return back()->with('success', 'Booking created successfully');
     }
 
@@ -1011,6 +1024,11 @@ class Hospitaladmincontroller extends Controller
 
     private function sendSpeedbotsNotification(Booking $booking, string $oldStatus, string $newStatus, array $additionalData = [])
     {
+        // Only send WhatsApp notification for accepted / rejected / rescheduled
+        if (!in_array($newStatus, ['accepted', 'rejected', 'rescheduled'])) {
+            return;
+        }
+
         try {
             if (!$booking->hospital_id) {
                 Log::channel('doctor')->warning('Speedbots notification skipped: No hospital_id', ['booking_id' => $booking->id]);
@@ -1024,15 +1042,37 @@ class Hospitaladmincontroller extends Controller
                 return;
             }
 
+            // ── Resolve flow ID from hospital settings (DB) ──────────
+            // OLD hardcoded fallbacks kept as comments:
+            // 'accepted'    => '1774503294935'
+            // 'rejected'    => '1774503355823'
+            // 'rescheduled' => '1774503413964'
+            $flowMap = [
+                'accepted'    => $hospital->accept_flow_id,
+                'rejected'    => $hospital->reject_flow_id,
+                'rescheduled' => $hospital->reschedule_flow_id,
+            ];
+
+            $flowId = $flowMap[$newStatus] ?? null;
+
+            if (empty($flowId)) {
+                Log::channel('doctor')->warning('Speedbots notification skipped: Missing flow ID for status', [
+                    'booking_id' => $booking->id,
+                    'status'     => $newStatus,
+                ]);
+                return;
+            }
+
             if (empty($hospital->token)) {
                 Log::channel('doctor')->warning('Speedbots notification skipped: Missing API token', ['booking_id' => $booking->id]);
                 return;
             }
 
-            if (empty($hospital->flow_id)) {
-                Log::channel('doctor')->warning('Speedbots notification skipped: Missing flow_id', ['booking_id' => $booking->id]);
-                return;
-            }
+            // OLD: used a single hospital->flow_id for all statuses
+            // if (empty($hospital->flow_id)) {
+            //     Log::channel('doctor')->warning('Speedbots notification skipped: Missing flow_id', ['booking_id' => $booking->id]);
+            //     return;
+            // }
 
             if (empty($booking->patient_phone)) {
                 Log::channel('doctor')->warning('Speedbots notification skipped: Missing patient phone', ['booking_id' => $booking->id]);
@@ -1049,52 +1089,91 @@ class Hospitaladmincontroller extends Controller
             Log::channel('doctor')->info('Sending Speedbots notification', [
                 'booking_id' => $booking->id,
                 'contact_id' => $contactId,
-                'flow_id'    => $hospital->flow_id,
+                'flow_id'    => $flowId,  // OLD: $hospital->flow_id
                 'old_status' => $oldStatus,
                 'new_status' => $newStatus,
             ]);
 
-            // Update date custom field (244056)
-            Http::timeout(10)
-                ->withHeaders([
-                    'X-ACCESS-TOKEN' => $hospital->token,
-                    'Content-Type'   => 'application/x-www-form-urlencoded'
-                ])
-                ->asForm()
-                ->post("https://app.speedbots.io/api/contacts/{$contactId}/custom_fields/244056", [
-                    'value' => $booking->booking_date
-                ]);
+            // ── For reschedule: update date+time custom field with new_date + new_time ──
+            if ($newStatus === 'rescheduled') {
+                // Use datetime_field_id from hospital settings (DB), OLD hardcoded: 244056
+                $dateFieldId = $hospital->datetime_field_id ?? '244056';
 
-            // Update patient name custom field (947818)
+                $newDate       = $additionalData['new_date'] ?? $booking->booking_date;
+                $newTime       = $additionalData['new_time'] ?? $booking->start_time;
+                $dateTimeValue = $newDate . ' ' . $newTime;
+
+                Http::timeout(10)
+                    ->withoutVerifying() // SSL bypass for local dev (cURL error 60)
+                    ->withHeaders([
+                        'X-ACCESS-TOKEN' => $hospital->token,
+                        'Content-Type'   => 'application/x-www-form-urlencoded',
+                        'accept'         => 'application/json',
+                    ])
+                    ->asForm()
+                    ->post("https://app.speedbots.io/api/contacts/{$contactId}/custom_fields/{$dateFieldId}", [
+                        'value' => $dateTimeValue,
+                    ]);
+
+                Log::channel('doctor')->info('Speedbots reschedule date+time set', [
+                    'contact_id'   => $contactId,
+                    'field_id'     => $dateFieldId,
+                    'value'        => $dateTimeValue,
+                ]);
+            }
+
+            // OLD: Update date custom field (244056) — sent for all statuses, now only for rescheduled above
+            // Http::timeout(10)
+            //     ->withHeaders([
+            //         'X-ACCESS-TOKEN' => $hospital->token,
+            //         'Content-Type'   => 'application/x-www-form-urlencoded'
+            //     ])
+            //     ->asForm()
+            //     ->post("https://app.speedbots.io/api/contacts/{$contactId}/custom_fields/244056", [
+            //         'value' => $booking->booking_date
+            //     ]);
+
+            // OLD: Update patient name custom field (947818)
+            // $response = Http::timeout(10)
+            //     ->withHeaders([
+            //         'X-ACCESS-TOKEN' => $hospital->token,
+            //         'Content-Type'   => 'application/x-www-form-urlencoded'
+            //     ])
+            //     ->asForm()
+            //     ->post("https://app.speedbots.io/api/contacts/{$contactId}/custom_fields/947818", [
+            //         'value' => $booking->patient_name
+            //     ]);
+
+            // OLD: Update status custom field (591719)
+            // Http::timeout(10)
+            //     ->withHeaders([
+            //         'X-ACCESS-TOKEN' => $hospital->token,
+            //         'Content-Type'   => 'application/x-www-form-urlencoded'
+            //     ])
+            //     ->asForm()
+            //     ->post("https://app.speedbots.io/api/contacts/{$contactId}/custom_fields/591719", [
+            //         'value' => $newStatus
+            //     ]);
+
+            // ── Send the correct flow based on status ────────
             $response = Http::timeout(10)
+                ->withoutVerifying() // SSL bypass for local dev (cURL error 60)
                 ->withHeaders([
                     'X-ACCESS-TOKEN' => $hospital->token,
-                    'Content-Type'   => 'application/x-www-form-urlencoded'
+                    'accept'         => 'application/json',
                 ])
-                ->asForm()
-                ->post("https://app.speedbots.io/api/contacts/{$contactId}/custom_fields/947818", [
-                    'value' => $booking->patient_name
-                ]);
-
-            // Update status custom field (591719)
-            Http::timeout(10)
-                ->withHeaders([
-                    'X-ACCESS-TOKEN' => $hospital->token,
-                    'Content-Type'   => 'application/x-www-form-urlencoded'
-                ])
-                ->asForm()
-                ->post("https://app.speedbots.io/api/contacts/{$contactId}/custom_fields/591719", [
-                    'value' => $newStatus
-                ]);
+                ->post("https://app.speedbots.io/api/contacts/{$contactId}/send/{$flowId}");
 
             if ($response->successful()) {
                 Log::channel('doctor')->info('Speedbots notification sent successfully', [
                     'booking_id'  => $booking->id,
+                    'flow_id'     => $flowId,
                     'status_code' => $response->status(),
                 ]);
             } else {
                 Log::channel('doctor')->error('Speedbots notification failed', [
                     'booking_id'  => $booking->id,
+                    'flow_id'     => $flowId,
                     'status_code' => $response->status(),
                     'error'       => $response->body(),
                 ]);
@@ -1112,6 +1191,45 @@ class Hospitaladmincontroller extends Controller
             ]);
         }
     }
+    private function createSpeedbotsContact(string $phone, int $hospitalId): void
+{
+    try {
+        $hospital = \App\Models\Hospital::find($hospitalId);
+
+        if (!$hospital || empty($hospital->token)) {
+            Log::channel('hospital_admin')->warning('Speedbots contact skipped: no token', [
+                'hospital_id' => $hospitalId,
+            ]);
+            return;
+        }
+
+        $cleanPhone = preg_replace('/[^0-9+]/', '', $phone);
+        if (empty($cleanPhone)) return;
+
+        $response = Http::timeout(10)
+            ->withoutVerifying() // SSL bypass for local dev (cURL error 60)
+            ->withHeaders([
+                'X-ACCESS-TOKEN' => $hospital->token,
+                'Content-Type'   => 'application/json',
+                'accept'         => 'application/json',
+            ])
+            ->post('https://app.speedbots.io/api/contacts', [
+                'phone' => $cleanPhone,
+            ]);
+
+        Log::channel('hospital_admin')->info('Speedbots contact created', [
+            'phone'    => $cleanPhone,
+            'status'   => $response->status(),
+            'response' => $response->json(),
+        ]);
+
+    } catch (\Exception $e) {
+        Log::channel('hospital_admin')->error('Speedbots contact failed', [
+            'phone' => $phone,
+            'error' => $e->getMessage(),
+        ]);
+    }
+}
     public function calendar(Request $request)
 {
     $hospitalId = auth()->user()->hospital_id;
@@ -1179,4 +1297,53 @@ class Hospitaladmincontroller extends Controller
         'weeks', 'currentMonth', 'prevMonth', 'nextMonth', 'allBookings'
     ));
 }
+
+    // ══════════════════════════════════════════════════════════
+    //  SPEEDBOTS SETTINGS (hospital admin)
+    // ══════════════════════════════════════════════════════════
+
+    public function speedbots_settings()
+    {
+        $hospital = Hospital::find(auth()->user()->hospital_id);
+
+        if (!$hospital) {
+            abort(404);
+        }
+
+        return view('hospital_admin.speedbots_settings', compact('hospital'));
+    }
+
+    public function speedbots_settings_update(Request $request)
+    {
+        $hospital = Hospital::find(auth()->user()->hospital_id);
+
+        if (!$hospital) {
+            abort(404);
+        }
+
+        $request->validate([
+            'token'              => 'nullable|string|max:255',
+            'accept_flow_id'     => 'nullable|string|max:50',
+            'reject_flow_id'     => 'nullable|string|max:50',
+            'reschedule_flow_id' => 'nullable|string|max:50',
+            'datetime_field_id'  => 'nullable|string|max:50',
+        ]);
+
+        $hospital->update([
+            'token'              => $request->token,
+            'accept_flow_id'     => $request->accept_flow_id,
+            'reject_flow_id'     => $request->reject_flow_id,
+            'reschedule_flow_id' => $request->reschedule_flow_id,
+            'datetime_field_id'  => $request->datetime_field_id,
+        ]);
+
+        Log::channel('hospital_admin')->info('Speedbots settings updated', [
+            'hospital_id' => $hospital->id,
+            'user_id'     => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Speedbots settings saved successfully.');
+    }
+
 }
+//ok

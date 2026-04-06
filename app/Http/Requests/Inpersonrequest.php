@@ -26,7 +26,7 @@ class Inpersonrequest extends FormRequest
             'patient_phone'=>'required',
             'doctor_id'=>'required',
             'age'=>'required',
-            'cause'=>'required',
+            'cause'=>'nullable|string',
             'booking_date'=>'required|date',
             'start_time'=>'required',
         ];

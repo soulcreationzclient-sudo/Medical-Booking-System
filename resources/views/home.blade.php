@@ -34,6 +34,35 @@
             </div>
         </div>
     </div>
+    </div>
+
+    {{-- ── API Token Card ── --}}
+    @if(auth()->user()->role === 'hospital_admin')
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-10">
+            <div class="p-3 rounded-3" style="background:#f0f6ff;border:1px solid #b5d4f4">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span style="font-size:13px;font-weight:600;color:#0C447C">Your API Token</span>
+                    <span style="font-size:11px;background:#E6F1FB;color:#185FA5;padding:1px 8px;border-radius:999px;font-weight:500">Swagger / cURL</span>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <input type="password" id="apiTokenInput" class="form-control form-control-sm" readonly
+                           value="{{ auth()->user()->api_code }}"
+                           style="font-family:monospace;font-size:13px;max-width:360px;background:#fff;border-color:#b5d4f4">
+                    <button class="btn btn-sm" onclick="toggleApiToken()" id="toggleBtn"
+                            style="background:#E6F1FB;color:#0C447C;border:1px solid #b5d4f4;font-size:12px">Show</button>
+                    <button class="btn btn-sm" onclick="copyApiToken()" id="copyTokenBtn"
+                            style="background:#1363C6;color:#fff;font-size:12px">Copy</button>
+                    <a href="/api/documentation" target="_blank" class="btn btn-sm"
+                       style="background:#0F6E56;color:#fff;font-size:12px">Open Swagger UI</a>
+                </div>
+                <small class="text-muted mt-1 d-block" style="font-size:11px">
+                    Use as <code>Authorization: Bearer {token}</code> in all API requests.
+                </small>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 
 <script>
@@ -64,5 +93,37 @@
         updateWelcomeBannerDateTime();
         setInterval(updateWelcomeBannerDateTime, 60000);
     });
+
+    function toggleApiToken() {
+        const input = document.getElementById('apiTokenInput');
+        const btn   = document.getElementById('toggleBtn');
+        if (!input) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            btn.textContent = 'Hide';
+        } else {
+            input.type = 'password';
+            btn.textContent = 'Show';
+        }
+    }
+
+    function copyApiToken() {
+        const input = document.getElementById('apiTokenInput');
+        if (!input) return;
+        const prevType = input.type;
+        input.type = 'text';
+        input.select();
+        input.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(input.value).then(() => {
+            input.type = prevType;
+            const btn = document.getElementById('copyTokenBtn');
+            btn.textContent = 'Copied!';
+            btn.style.background = '#198754';
+            setTimeout(() => {
+                btn.textContent = 'Copy';
+                btn.style.background = '#1363C6';
+            }, 2000);
+        });
+    }
 </script>
 @endsection
