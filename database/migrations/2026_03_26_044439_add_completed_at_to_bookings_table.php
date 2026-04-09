@@ -8,9 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('bookings', function (Blueprint $table) {
-            $table->timestamp('completed_at')->nullable()->after('status');
-        });
+        if (!Schema::hasColumn('bookings', 'completed_at')) {
+            Schema::table('bookings', function (Blueprint $table) {
+                $table->timestamp('completed_at')->nullable()->after('status');
+            });
+        }
     }
 
     public function down(): void
