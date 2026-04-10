@@ -4,22 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Booking extends Model
+class Treatment extends Model
 {
-    //
-    public $guarded = [];
-
-    protected $casts = [
-        'booking_date' => 'date',
-        'completed_at' => 'datetime',
-        'approved_at'  => 'datetime',
-        'rescheduled_at' => 'datetime',
-        'wa_sent_at'   => 'datetime',
+    protected $fillable = [
+        'hospital_id',
+        'name',
+        'code',
+        'category',
+        'base_price',
+        'is_active',
     ];
 
-    public function doctor()
+    protected $casts = [
+        'base_price' => 'decimal:2',
+        'is_active'  => 'boolean',
+    ];
+
+    public function hospital()
     {
-        return $this->belongsTo(Doctor::class);
+        return $this->belongsTo(Hospital::class);
     }
 
     public function bookingTreatments()

@@ -8,4 +8,9 @@ class Hospital extends Model
 {
     //
     public $guarded = [];
+    
+    public function treatments()
+    {
+        return $this->hasMany(Treatment::class);
+    }
 }

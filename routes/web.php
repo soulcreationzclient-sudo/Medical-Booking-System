@@ -90,6 +90,13 @@ Route::middleware(['auth', 'role:hospital_admin'])
             Route::put('/medicines/{id}',    'medicine_update')->name('medicines.update');
             Route::delete('/medicines/{id}', 'medicine_delete')->name('medicines.delete');
 
+            // ── Treatments ──────────────────────────────
+            Route::get('/treatments',           'treatments_index')->name('treatments.index');
+            Route::post('/treatments',          'treatment_store')->name('treatments.store');
+            Route::put('/treatments/{id}',      'treatment_update')->name('treatments.update');
+            Route::delete('/treatments/{id}',   'treatment_delete')->name('treatments.delete');
+            Route::get('/treatment-price/{id}', 'getTreatmentPrice')->name('treatments.price');
+
             // ── Prescriptions ───────────────────────────
             // ⚠️ static segment first, wildcard second
             Route::get('/prescriptions/create/{bookingId}', 'prescription_create')->name('prescriptions.create');

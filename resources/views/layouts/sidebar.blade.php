@@ -193,6 +193,14 @@
                         Overall Bookings
                     </a>
                 </li>
+
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('hospital_admin.treatments*') ? 'active' : '' }}"
+                       href="{{ route('hospital_admin.treatments.index') }}">
+                        Treatments
+                    </a>
+                </li>
+                
             @endcan
 
         </ul>

@@ -9,6 +9,7 @@ class PatientBillingEntry extends Model
     public $guarded = [];
 
     protected $casts = [
+        'amount'       => 'decimal:2',
         'is_paid'      => 'boolean',
         'is_past_note' => 'boolean',
         'paid_at'      => 'datetime',
@@ -27,5 +28,10 @@ class PatientBillingEntry extends Model
     public function booking()
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    public function treatment()
+    {
+        return $this->belongsTo(Treatment::class);
     }
 }

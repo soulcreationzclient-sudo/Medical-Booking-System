@@ -566,15 +566,62 @@
                 <div class="billing-grid">
                     <div class="billing-field">
                         <label>Type *</label>
-                        <select name="type" required>
+                        <select name="type" id="treatmentTypeSelect" required>
                             <option value="treatment">Treatment</option>
                             <option value="operation">Operation</option>
                         </select>
                     </div>
+
+                    <div class="billing-field">
+                        <label>Booking</label>
+                        <select name="booking_id">
+                            <option value="">Not linked to booking</option>
+                            @foreach(($bookings ?? collect()) as $booking)
+                                <option value="{{ $booking->id }}">
+                                    {{ \Carbon\Carbon::parse($booking->booking_date)->format('d M Y') }}
+                                    @if($booking->doctor_name) - Dr. {{ $booking->doctor_name }} @endif
+                                    - {{ ucfirst(str_replace('_', ' ', $booking->status)) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="billing-field">
+                        <label>Treatment *</label>
+                        <select name="treatment_id" id="treatmentSelect" required onchange="fillTreatmentPrice()">
+                            <option value="">Select treatment</option>
+                            @foreach(($treatments ?? collect()) as $treatment)
+                                <option
+                                    value="{{ $treatment->id }}"
+                                    data-price="{{ $treatment->base_price }}"
+                                    data-category="{{ $treatment->category }}"
+                                    data-name="{{ $treatment->name }}">
+                                    {{ $treatment->name }} (RM{{ number_format($treatment->base_price, 2) }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="billing-field">
+                        <label>Quantity *</label>
+                        <input type="number" name="quantity" id="treatmentQuantity" min="1" value="1" required oninput="recalculateTreatmentTotal()">
+                    </div>
+
+                    <div class="billing-field">
+                        <label>Unit Price (RM) *</label>
+                        <input type="number" name="unit_price" id="treatmentUnitPrice" step="0.01" min="0" value="0" required oninput="recalculateTreatmentTotal()">
+                    </div>
+                    
+                    <div class="billing-field">
+                        <label>Discount (RM)</label>
+                        <input type="number" name="discount_amount" id="treatmentDiscount" step="0.01" min="0" value="0" oninput="recalculateTreatmentTotal()">
+                    </div>
+
                     <div class="billing-field" style="grid-column: span 2">
                         <label>Description / Notes *</label>
-                        <input type="text" name="description" placeholder="Describe the treatment or operation..." required>
+                        <input type="text" name="description" id="treatmentDescription" placeholder="Describe the treatment or operation..." >
                     </div>
+
                     <div class="billing-field" style="display:flex;align-items:center;gap:10px;padding-top:20px">
                         <input type="checkbox" id="isPastRecord" style="width:18px;height:18px;cursor:pointer"
                                onchange="toggleTreatmentAmount(this)">
@@ -583,9 +630,15 @@
                         </label>
                         <input type="hidden" name="is_past_note" id="isPastNoteHidden" value="0">
                     </div>
+
                     <div class="billing-field" id="treatmentAmountWrapper">
-                        <label>Amount (RM) *</label>
-                        <input type="number" name="amount" id="treatmentAmountInput" step="0.01" min="0" value="0" required>
+                        <label>Total Amount (RM) *</label>
+                        <input type="number" name="amount" id="treatmentAmountInput" step="0.01" min="0" value="0" required readonly>
+                    </div>
+
+                    <div class="billing-field" style="grid-column: span 3">
+                        <label>Internal Notes</label>
+                        <input type="text" name="notes" placeholder="Optional booking treatments note">
                     </div>
                 </div>
                 <div style="display:flex;gap:10px">
@@ -617,7 +670,9 @@
                             <span class="type-badge type-{{ $entry->type }}">{{ ucfirst(str_replace('_', ' ', $entry->type)) }}</span>
                             @if($entry->is_past_note)<span class="note-badge" style="margin-left:4px">Past Note</span>@endif
                         </td>
-                        <td>{{ $entry->description }}</td>
+                        <td>
+                            {{ $entry->description ?: ($entry->treatment->name ?? '—') }}
+                        </td>
                         <td>
                             @if($entry->is_past_note)
                                 <span style="color:#cbd5e1;font-size:12px;font-style:italic">Note only</span>
@@ -839,20 +894,40 @@ function toggleTreatmentForm() {
     document.getElementById('billingForm').classList.remove('open');
 }
 
-function toggleTreatmentAmount(checkbox) {
-    const wrapper = document.getElementById('treatmentAmountWrapper');
-    const input   = document.getElementById('treatmentAmountInput');
-    const hidden  = document.getElementById('isPastNoteHidden');
-    if (checkbox.checked) {
-        wrapper.style.display = 'none';
-        input.required = false;
-        input.value = 0;
-        hidden.value = '1';
-    } else {
-        wrapper.style.display = 'block';
-        input.required = true;
-        hidden.value = '0';
+function fillTreatmentPrice() {
+    const select = document.getElementById('treatmentSelect');
+    const option = select.options[select.selectedIndex];
+
+    const price = parseFloat(option?.dataset?.price || 0);
+    const name  = option?.dataset?.name || '';
+
+    document.getElementById('treatmentUnitPrice').value = price.toFixed(2);
+
+    const desc = document.getElementById('treatmentDescription');
+    if (!desc.value && name) {
+        desc.value = name;
     }
+
+    recalculateTreatmentTotal();
+}
+
+function recalculateTreatmentTotal() {
+    const qty = parseFloat(document.getElementById('treatmentQuantity').value || 1);
+    const unitPrice = parseFloat(document.getElementById('treatmentUnitPrice').value || 0);
+    const discount = parseFloat(document.getElementById('treatmentDiscount').value || 0);
+    const isPast = document.getElementById('isPastRecord').checked;
+
+    let total = (qty * unitPrice) - discount;
+    if (total < 0) total = 0;
+    if (isPast) total = 0;
+
+    document.getElementById('treatmentAmountInput').value = total.toFixed(2);
+}
+
+function toggleTreatmentAmount(checkbox) {
+    const hidden = document.getElementById('isPastNoteHidden');
+    hidden.value = checkbox.checked ? '1' : '0';
+    recalculateTreatmentTotal();
 }
 
 function filterBilling(type, btn) {

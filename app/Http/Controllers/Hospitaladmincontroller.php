@@ -12,6 +12,8 @@ use App\Models\Patient;
 use App\Models\PatientBillingEntry;
 use App\Models\Prescription;
 use App\Models\PrescriptionItem;
+use App\Models\BookingTreatment;
+use App\Models\Treatment;
 use App\Models\Specialization;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -706,6 +708,93 @@ class Hospitaladmincontroller extends Controller
     }
 
     // ══════════════════════════════════════════════════════════
+    //  TREATMENTS
+    // ══════════════════════════════════════════════════════════
+
+    public function treatments_index()
+    {
+        $hospitalId = auth()->user()->hospital_id;
+
+        $treatments = Treatment::where('hospital_id', $hospitalId)
+            ->orderBy('name')
+            ->get();
+
+        return view('hospital_admin.treatments', compact('treatments'));
+    }
+    
+    public function treatment_store(Request $request)
+    {
+        $request->validate([
+            'name'       => 'required|string|max:255',
+            'code'       => 'nullable|string|max:100',
+            'category'   => 'required|in:consultation,treatment,operation,medicine,other',
+            'base_price' => 'required|numeric|min:0',
+            'is_active'  => 'nullable|boolean',
+        ]);
+
+        Treatment::create([
+            'hospital_id' => auth()->user()->hospital_id,
+            'name'        => $request->name,
+            'code'        => $request->code,
+            'category'    => $request->category,
+            'base_price'  => $request->base_price,
+            'is_active'   => $request->boolean('is_active', true),
+        ]);
+
+        return back()->with('success', 'Treatment added successfully.');
+}
+
+    public function treatment_update(Request $request, $id)
+    {
+        $request->validate([
+            'name'       => 'required|string|max:255',
+            'code'       => 'nullable|string|max:100',
+            'category'   => 'required|in:consultation,treatment,operation,medicine,other',
+            'base_price' => 'required|numeric|min:0',
+            'is_active'  => 'nullable|boolean',
+        ]);
+
+        $treatment = Treatment::where('id', $id)
+            ->where('hospital_id', auth()->user()->hospital_id)
+            ->firstOrFail();
+
+        $treatment->update([
+            'name'       => $request->name,
+            'code'       => $request->code,
+            'category'   => $request->category,
+            'base_price' => $request->base_price,
+            'is_active'  => $request->boolean('is_active', true),
+        ]);
+
+        return back()->with('success', 'Treatment updated successfully.');
+    }
+
+    public function treatment_delete($id)
+    {
+        $treatment = Treatment::where('id', $id)
+            ->where('hospital_id', auth()->user()->hospital_id)
+            ->firstOrFail();
+
+        $treatment->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function getTreatmentPrice($id)
+    {
+        $treatment = Treatment::where('id', $id)
+            ->where('hospital_id', auth()->user()->hospital_id)
+            ->firstOrFail();
+
+        return response()->json([
+            'id'         => $treatment->id,
+            'name'       => $treatment->name,
+            'category'   => $treatment->category,
+            'base_price' => (float) $treatment->base_price,
+        ]);
+    }
+
+    // ══════════════════════════════════════════════════════════
     //  PATIENTS
     // ══════════════════════════════════════════════════════════
 
@@ -730,7 +819,8 @@ class Hospitaladmincontroller extends Controller
         $patient    = Patient::findOrFail($id);
 
         // ── Billing entries ──────────────────────────────────
-        $billingEntries = PatientBillingEntry::where('patient_id', $id)
+        $billingEntries = PatientBillingEntry::with(['booking', 'treatment'])
+            ->where('patient_id', $id)
             ->where('hospital_id', $hospitalId)
             ->orderByDesc('created_at')
             ->get();
@@ -751,6 +841,12 @@ class Hospitaladmincontroller extends Controller
             ->orderBy('name')
             ->get();
 
+        //── Treatments ──────────────
+        $treatments = Treatment::where('hospital_id', $hospitalId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+        
         // ── Booking history with doctor name ─────────────────
         $bookings = DB::table('bookings as b')
             ->leftJoin('doctors as d', 'd.id', '=', 'b.doctor_id')
@@ -778,6 +874,7 @@ class Hospitaladmincontroller extends Controller
             'billingEntries',
             'prescriptions',
             'medicines',
+            'treatments',
             'bookings',
             'totalDue',
             'totalPaid'
@@ -788,23 +885,98 @@ class Hospitaladmincontroller extends Controller
     {
         $request->validate([
             'type'         => 'required|in:consultation,medicine,treatment,operation,custom_profit,custom_expense',
-            'description'  => 'required|string|max:500',
+            'description'  => 'nullable|string|max:500',
             'amount'       => 'required|numeric|min:0',
             'is_past_note' => 'nullable|boolean',
+            'booking_id'      => 'nullable|exists:bookings,id',
+            'treatment_id'    => 'nullable|exists:treatments,id',
+            'quantity'        => 'nullable|integer|min:1',
+            'unit_price'      => 'nullable|numeric|min:0',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'notes'           => 'nullable|string|max:255',
         ]);
 
         $hospitalId = auth()->user()->hospital_id;
+        $patient    = Patient::findOrFail($id);
 
-        PatientBillingEntry::create([
-            'patient_id'   => $id,
-            'hospital_id'  => $hospitalId,
-            'booking_id'   => $request->booking_id ?? null,
-            'type'         => $request->type,
-            'description'  => $request->description,
-            'amount'       => $request->amount,
-            'is_past_note' => $request->boolean('is_past_note'),
-            'is_paid'      => false,
-        ]);
+        DB::beginTransaction();
+
+        try {
+            $treatment = null;
+
+            if ($request->filled('treatment_id')) {
+                $treatment = Treatment::where('id', $request->treatment_id)
+                    ->where('hospital_id', $hospitalId)
+                    ->firstOrFail();
+            }
+
+            if ($request->filled('booking_id')) {
+                $booking = Booking::where('id', $request->booking_id)
+                    ->where('hospital_id', $hospitalId)
+                    ->firstOrFail();
+
+                if ($booking->patient_phone !== $patient->phone_no) {
+                    abort(422, 'Selected booking does not belong to this patient.');
+                }
+            }
+
+            $description = $request->description;
+            if (!$description && $treatment) {
+                $description = $treatment->name;
+            }
+
+            $billingEntry = PatientBillingEntry::create([
+                'patient_id'   => $id,
+                'hospital_id'  => $hospitalId,
+                'booking_id'   => $request->booking_id ?: null,
+                'treatment_id' => $request->treatment_id ?: null,
+                'type'         => $request->type,
+                'description'  => $description,
+                'amount'       => $request->amount,
+                'is_past_note' => $request->boolean('is_past_note'),
+                'is_paid'      => false,
+            ]);
+
+            if (
+                in_array($request->type, ['treatment', 'operation'], true) &&
+                $request->filled('booking_id') &&
+                $request->filled('treatment_id')
+            ) {
+                $quantity       = (int) ($request->quantity ?? 1);
+                $unitPrice      = (float) ($request->unit_price ?? ($treatment?->base_price ?? 0));
+                $discountAmount = (float) ($request->discount_amount ?? 0);
+                $totalAmount    = max(0, ($quantity * $unitPrice) - $discountAmount);
+
+                BookingTreatment::updateOrCreate(
+                    [
+                        'booking_id'   => $request->booking_id,
+                        'treatment_id' => $request->treatment_id,
+                    ],
+                    [
+                        'quantity'        => $quantity,
+                        'unit_price'      => $unitPrice,
+                        'discount_amount' => $discountAmount,
+                        'total_amount'    => $totalAmount,
+                        'notes'           => $request->notes,
+                    ]
+                );
+
+                if (!$request->boolean('is_past_note') && (float) $request->amount !== $totalAmount) {
+                    $billingEntry->update([
+                        'amount' => $totalAmount,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return back()->with('success', 'Billing entry added.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('patient_add_billing failed', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Failed to add billing entry.');
+        }
 
         // Mirror income entries into hospital financial ledger
         // if (in_array($request->type, ['consultation', 'treatment', 'operation', 'custom_profit'])) {
@@ -818,7 +990,7 @@ class Hospitaladmincontroller extends Controller
         //     ]);
         // }
 
-        return back()->with('success', 'Billing entry added.');
+        
     }
 
     public function patient_mark_paid(Request $request, $id, $entryId)
@@ -827,6 +999,13 @@ class Hospitaladmincontroller extends Controller
         ->where('patient_id', $id)
         ->where('hospital_id', auth()->user()->hospital_id)
         ->firstOrFail();
+    
+    if ($entry->is_paid) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Entry already marked as paid.',
+        ]);
+    }
 
     $entry->update([
         'is_paid' => true,
@@ -836,7 +1015,7 @@ class Hospitaladmincontroller extends Controller
     // ── Auto-add to Financial Ledger as Income ──────────────
     $incomTypes = ['consultation', 'medicine', 'treatment', 'operation'];
 
-    if (in_array($entry->type, $incomTypes)) {
+    if (in_array($entry->type, $incomTypes, true)) {
         HospitalFinancial::create([
             'hospital_id' => auth()->user()->hospital_id,
             'type'        => 'profit',
