@@ -194,3 +194,11 @@ Route::delete('/prescriptions/{id}',            [PrescriptionController::class, 
 // ══════════════════════════════════════════════════════════
 
 Route::post('/test', [Superadmincontroller::class, 'test'])->name('test');
+
+//search sytem routes
+use App\Http\Controllers\AiSearchController;
+
+Route::prefix('hospital-admin')->name('hospital_admin.')->group(function () {
+    Route::get('/ai-search', [AiSearchController::class, 'index'])->name('ai_search.index');
+    Route::post('/ai-search', [AiSearchController::class, 'search'])->name('ai_search.search');
+});

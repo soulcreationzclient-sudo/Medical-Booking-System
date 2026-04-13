@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'ai_search' => [
+    'url' => env('AI_SEARCH_API_URL', 'http://127.0.0.1:8001'),
+    ],
+
 ];

@@ -63,6 +63,40 @@
         </div>
     </div>
     @endif
+
+        {{-- ── AI Search Card ── --}}
+    @if(auth()->user()->role === 'hospital_admin')
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-10">
+            <div class="p-3 rounded-3" style="background:#f8f9ff;border:1px solid #d7defa">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span style="font-size:16px;font-weight:600;color:#2c3e50">
+                                AI Search
+                            </span>
+                            <span style="font-size:11px;background:#e9edff;color:#4154b3;padding:2px 8px;border-radius:999px;font-weight:500">
+                                Natural Language Search
+                            </span>
+                        </div>
+
+                        <p class="mb-0 text-muted" style="font-size:13px">
+                            Search revenue and busiest booking periods using queries like
+                            <strong>"consultation revenue today"</strong> or
+                            <strong>"busiest week last month"</strong>.
+                        </p>
+                    </div>
+
+                    <div>
+                        <a href="{{ route('hospital_admin.ai_search.index') }}" class="btn btn-primary">
+                            Open AI Search
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 
 <script>
