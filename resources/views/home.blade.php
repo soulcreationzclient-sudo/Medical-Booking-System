@@ -81,9 +81,8 @@
                         </div>
 
                         <p class="mb-0 text-muted" style="font-size:13px">
-                            Search revenue and busiest booking periods using queries like
-                            <strong>"consultation revenue today"</strong> or
-                            <strong>"busiest week last month"</strong>.
+                            Seach queries in your
+                            <strong>natural language</strong>.
                         </p>
                     </div>
 
