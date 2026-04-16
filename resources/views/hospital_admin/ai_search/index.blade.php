@@ -19,7 +19,7 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('hospital_admin.ai_search.search') }}">
+                    <form method="POST" action="{{ route('hospital_admin.ai_search.search') }}" autocomplete="off">
                         @csrf
 
                         <div class="mb-3">
@@ -31,6 +31,10 @@
                                 class="form-control form-control-lg"
                                 placeholder="Enter your query"
                                 value="{{ old('query', $query ?? '') }}"
+                                autocomplete="off"
+                                autocorrect="off"
+                                autocapitalize="off"
+                                spellcheck="false"
                                 required
                             >
                             @error('query')
