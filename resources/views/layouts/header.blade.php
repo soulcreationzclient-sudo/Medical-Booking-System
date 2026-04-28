@@ -86,7 +86,6 @@
                             Schedule
                         </a>
                     </li>
-                    <li class="nav-item">
     <a class="nav-link {{ request()->routeIs('doctor.calendar') ? 'active' : '' }}"
        href="{{ route('doctor.calendar') }}">
         Calendar
