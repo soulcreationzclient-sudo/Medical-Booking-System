@@ -108,20 +108,20 @@ class Bookingcontroller extends Controller
             ],
             [
                 'name'                   => $request->patient_name,
-                'age'                    => $request->age             ?? null,
-                'gender'                 => $request->gender          ?? null,
-                'ic_passport_no'         => $request->ic_passport_no  ?? null,
-                'dob'                    => $request->dob             ?? null,
-                'blood_type'             => $request->blood_type      ?? null,
-                'marital_status'         => $request->marital_status  ?? null,
-                'nationality'            => $request->nationality      ?? null,
-                'address'                => $request->address         ?? null,
-                'state'                  => $request->state           ?? null,
-                'city'                   => $request->city            ?? null,
-                'postcode'               => $request->postcode        ?? null,
-                'country'                => $request->country         ?? null,
-                'emergency_contact_name' => $request->emergency_contact_name ?? null,
-                'emergency_contact_no'   => $request->emergency_contact_no   ?? null,
+                'age'                    => $request->age                    ?: null,
+                'gender'                 => $request->gender                 ?: null,
+                'ic_passport_no'         => $request->ic_passport_no         ?: null,
+                'dob'                    => $request->dob                    ?: null,
+                'blood_type'             => $request->blood_type             ?: null,
+                'marital_status'         => $request->marital_status         ?: null,
+                'nationality'            => $request->nationality             ?: null,
+                'address'                => $request->address                ?: null,
+                'state'                  => $request->state                  ?: null,
+                'city'                   => $request->city                   ?: null,
+                'postcode'               => $request->postcode               ?: null,
+                'country'                => $request->country                ?: null,
+                'emergency_contact_name' => $request->emergency_contact_name ?: null,
+                'emergency_contact_no'   => $request->emergency_contact_no   ?: null,
                 'updated_at'             => now(),
                 'created_at'             => now(),
             ]
@@ -153,23 +153,93 @@ class Bookingcontroller extends Controller
 
     if ($hospital && !empty($hospital->token)) {
         $cleanPhone = preg_replace('/[^0-9+]/', '', $request->patient_phone);
+        $token      = $hospital->token;
 
         if (!empty($cleanPhone)) {
+            $client = new \GuzzleHttp\Client(['verify' => false]);
 
-            $client = new \GuzzleHttp\Client([
-                'verify' => false, // SSL bypass
-            ]);
+            // ── CALL 1: Create contact (ignore error if already exists) ──
+            try {
+                $client->post('https://app.speedbots.io/api/contacts', [
+                    'headers' => [
+                        'X-ACCESS-TOKEN' => $token,
+                        'Content-Type'   => 'application/json',
+                        'accept'         => 'application/json',
+                    ],
+                    'json'            => ['phone' => $cleanPhone],
+                    'http_errors'     => false, // don't throw on 4xx/5xx
+                ]);
+            } catch (\Exception $e) {
+                // Contact may already exist — continue to set custom fields
+                \Illuminate\Support\Facades\Log::info('Speedbots contact create skipped (may exist)', [
+                    'phone' => $cleanPhone, 'error' => $e->getMessage()
+                ]);
+            }
 
-            $client->post('https://app.speedbots.io/api/contacts', [
-                'headers' => [
-                    'X-ACCESS-TOKEN' => $hospital->token,
-                    'Content-Type'   => 'application/json',
-                    'accept'         => 'application/json',
-                ],
-                'json' => [
-                    'phone' => $cleanPhone,
-                ],
-            ]);
+            // ── CALL 2: Set appointment date custom field ────
+            try { $dateFieldId = $hospital->appointment_date_field_id ?? null; }
+            catch (\Exception $e) { $dateFieldId = null; }
+
+            if ($dateFieldId && $request->booking_date) {
+                try {
+                    $client->post("https://app.speedbots.io/api/contacts/{$cleanPhone}/custom_fields/{$dateFieldId}", [
+                        'headers' => [
+                            'X-ACCESS-TOKEN' => $token,
+                            'Content-Type'   => 'application/x-www-form-urlencoded',
+                            'accept'         => 'application/json',
+                        ],
+                        'form_params'  => ['value' => $request->booking_date],
+                        'http_errors'  => false,
+                    ]);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Speedbots date field failed', ['error' => $e->getMessage()]);
+                }
+            }
+
+            // ── CALL 3: Set appointment time custom field ────
+            try { $timeFieldId = $hospital->appointment_time_field_id ?? null; }
+            catch (\Exception $e) { $timeFieldId = null; }
+
+            if ($timeFieldId && $request->start_time) {
+                try {
+                    $formattedTime = \Carbon\Carbon::createFromFormat('H:i:s', $request->start_time)->format('h:i A');
+                } catch (\Exception $e) {
+                    $formattedTime = $request->start_time;
+                }
+                try {
+                    $client->post("https://app.speedbots.io/api/contacts/{$cleanPhone}/custom_fields/{$timeFieldId}", [
+                        'headers' => [
+                            'X-ACCESS-TOKEN' => $token,
+                            'Content-Type'   => 'application/x-www-form-urlencoded',
+                            'accept'         => 'application/json',
+                        ],
+                        'form_params'  => ['value' => $formattedTime],
+                        'http_errors'  => false,
+                    ]);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Speedbots time field failed', ['error' => $e->getMessage()]);
+                }
+            }
+
+            // ── CALL 4: Set booking code custom field ────
+            try { $bookingCodeFieldId = $hospital->booking_code_field_id ?? null; }
+            catch (\Exception $e) { $bookingCodeFieldId = null; }
+
+            if ($bookingCodeFieldId && isset($actionToken)) {
+                try {
+                    $client->post("https://app.speedbots.io/api/contacts/{$cleanPhone}/custom_fields/{$bookingCodeFieldId}", [
+                        'headers' => [
+                            'X-ACCESS-TOKEN' => $token,
+                            'Content-Type'   => 'application/x-www-form-urlencoded',
+                            'accept'         => 'application/json',
+                        ],
+                        'form_params' => ['value' => $actionToken],
+                        'http_errors' => false,
+                    ]);
+                } catch (\Exception $e) {
+                    \Illuminate\Support\Facades\Log::warning('Speedbots booking code field failed', ['error' => $e->getMessage()]);
+                }
+            }
         }
     }
 } catch (\Exception $e) {

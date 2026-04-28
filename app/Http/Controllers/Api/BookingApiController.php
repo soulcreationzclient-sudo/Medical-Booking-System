@@ -326,4 +326,72 @@ class BookingApiController extends BaseApiController
 
         return response()->json($booking);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/api/v1/bookings/cancel/{code}",
+     *     tags={"Bookings"},
+     *     summary="Cancel a booking by booking code (public — no auth needed)",
+     *     description="Patients can cancel their own booking using their booking code and phone number for verification.",
+     *     @OA\Parameter(name="code", in="path", required=true, description="Booking code e.g. BK-XK92MPLR", @OA\Schema(type="string")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"phone"},
+     *             @OA\Property(property="phone", type="string", example="919994780436", description="Patient phone number to verify ownership"),
+     *             @OA\Property(property="reason", type="string", example="Cannot attend", description="Optional cancellation reason")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Booking cancelled successfully"),
+     *     @OA\Response(response=403, description="Phone number does not match booking"),
+     *     @OA\Response(response=404, description="Booking not found"),
+     *     @OA\Response(response=422, description="Booking cannot be cancelled (already completed or cancelled)")
+     * )
+     */
+    public function cancelByCode(Request $request, string $code)
+    {
+        $request->validate([
+            'phone'  => 'required|string',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        $booking = DB::table('bookings')
+            ->where('action_token', $code)
+            ->first();
+
+        if (!$booking) {
+            return response()->json(['error' => 'Booking not found'], 404);
+        }
+
+        // Verify phone ownership
+        $cleanPhone     = preg_replace('/[^0-9+]/', '', $request->phone);
+        $bookingPhone   = preg_replace('/[^0-9+]/', '', $booking->patient_phone);
+
+        if ($cleanPhone !== $bookingPhone) {
+            return response()->json([
+                'error'   => 'Phone number does not match this booking.',
+            ], 403);
+        }
+
+        // Cannot cancel already completed or cancelled bookings
+        if (in_array($booking->status, ['completed', 'cancelled'])) {
+            return response()->json([
+                'error'  => "Booking is already {$booking->status} and cannot be cancelled.",
+            ], 422);
+        }
+
+        DB::table('bookings')
+            ->where('action_token', $code)
+            ->update([
+                'status'     => 'cancelled',
+                'updated_at' => now(),
+            ]);
+
+        return response()->json([
+            'success'      => true,
+            'booking_code' => $code,
+            'message'      => 'Booking cancelled successfully.',
+        ]);
+    }
+
 }

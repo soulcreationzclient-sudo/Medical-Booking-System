@@ -473,6 +473,66 @@
                 }
             }
         },
+        "/api/v1/bookings/cancel/{code}": {
+            "post": {
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Cancel a booking by booking code (public — no auth needed)",
+                "description": "Patients can cancel their own booking using their booking code and phone number for verification.",
+                "operationId": "2bba44029ce3c6b277d5ad932ee40ba9",
+                "parameters": [
+                    {
+                        "name": "code",
+                        "in": "path",
+                        "description": "Booking code e.g. BK-XK92MPLR",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "phone"
+                                ],
+                                "properties": {
+                                    "phone": {
+                                        "description": "Patient phone number to verify ownership",
+                                        "type": "string",
+                                        "example": "919994780436"
+                                    },
+                                    "reason": {
+                                        "description": "Optional cancellation reason",
+                                        "type": "string",
+                                        "example": "Cannot attend"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Booking cancelled successfully"
+                    },
+                    "403": {
+                        "description": "Phone number does not match booking"
+                    },
+                    "404": {
+                        "description": "Booking not found"
+                    },
+                    "422": {
+                        "description": "Booking cannot be cancelled (already completed or cancelled)"
+                    }
+                }
+            }
+        },
         "/api/v1/doctors": {
             "get": {
                 "tags": [

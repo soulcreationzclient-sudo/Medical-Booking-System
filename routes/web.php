@@ -143,11 +143,11 @@ Route::middleware(['auth', 'role:hospital_admin'])
 
 Route::get('/hospital_booking/{hospital_code}', [Hospitaladmincontroller::class, 'hospital_show']);
 Route::get('/doctor_booking/{id}',              [Bookingcontroller::class, 'booking'])->name('patient.booking');
-Route::post('/booking/{doctor}/ajax',           [BookingController::class, 'ajaxStore'])->name('booking.ajax.store');
-Route::get('/booking/status/{code}',            [BookingController::class, 'status'])->name('booking.status');
-Route::get('/booking/verify/{token}',           [BookingController::class, 'verify'])->name('booking.verify');
-Route::get('/booking/lookup-patient',           [BookingController::class, 'lookupPatient'])->name('booking.lookup.patient');
-Route::post('/booking/{doctorId}',              [BookingController::class, 'ajaxStore'])->name('booking.store');
+Route::post('/booking/{doctor}/ajax',           [Bookingcontroller::class, 'ajaxStore'])->name('booking.ajax.store');
+Route::get('/booking/status/{code}',            [Bookingcontroller::class, 'status'])->name('booking.status');
+Route::get('/booking/verify/{token}',           [Bookingcontroller::class, 'verify'])->name('booking.verify');
+Route::get('/booking/lookup-patient',           [Bookingcontroller::class, 'lookupPatient'])->name('booking.lookup.patient');
+Route::post('/booking/{doctorId}',              [Bookingcontroller::class, 'ajaxStore'])->name('booking.store');
 Route::view('/book', 'boooking_form');
 
 // ══════════════════════════════════════════════════════════

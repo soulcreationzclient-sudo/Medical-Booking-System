@@ -8,6 +8,16 @@ class Doctor extends Model
 {
     public $guarded = [];
 
+    public function specializations()
+    {
+        return $this->belongsToMany(
+            \App\Models\Specialization::class,
+            'doctor_specializations',
+            'doctor_id',
+            'specialization_id'
+        );
+    }
+
     public function hospital()
     {
         return $this->belongsTo(Hospital::class);

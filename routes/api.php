@@ -15,6 +15,9 @@ Route::post('/chat', [ApiChatController::class, 'chat']);
 // ── Public booking status lookup ─────────────────────────────
 Route::get('/v1/bookings/status/{code}', [BookingApiController::class, 'statusByCode']);
 
+// ── Public booking cancel ─────────────────────────────────────
+Route::post('/v1/bookings/cancel/{code}', [BookingApiController::class, 'cancelByCode']);
+
 // ── Auth ─────────────────────────────────────────────────────
 Route::post('/v1/auth/login', [AuthApiController::class, 'login']);
 

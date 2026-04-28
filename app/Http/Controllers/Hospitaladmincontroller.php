@@ -45,17 +45,30 @@ class Hospitaladmincontroller extends Controller
     public function add_doctor_view()
     {
         $doctors = DB::table('doctors as d')
-            ->join('specializations as s', 's.id', '=', 'd.specialization_id')
             ->where('d.hospital_id', auth()->user()->hospital_id)
-            ->select(
-                'd.id as id',
-                'd.name as name',
-                'd.profile_photo',
-                'd.doctor_code',
-                'd.qualification',
-                's.specialization',
-                'd.phone'
-            )->get();
+            ->select('d.id', 'd.name', 'd.profile_photo', 'd.doctor_code', 'd.qualification', 'd.phone', 'd.specialization_id')
+            ->get();
+
+        // Load all specializations from pivot for each doctor
+        foreach ($doctors as $doctor) {
+            try {
+                $specs = DB::table('doctor_specializations as ds')
+                    ->join('specializations as s', 's.id', '=', 'ds.specialization_id')
+                    ->where('ds.doctor_id', $doctor->id)
+                    ->pluck('s.specialization')
+                    ->toArray();
+            } catch (\Exception $e) {
+                $specs = [];
+            }
+
+            // Fallback to specialization_id column if pivot is empty
+            if (empty($specs) && $doctor->specialization_id) {
+                $spec  = DB::table('specializations')->where('id', $doctor->specialization_id)->value('specialization');
+                $specs = $spec ? [$spec] : [];
+            }
+
+            $doctor->specialization = implode(', ', $specs);
+        }
 
         return view('hospital_admin.hospital_admin_dashboard', compact('doctors'));
     }
@@ -64,10 +77,11 @@ class Hospitaladmincontroller extends Controller
     {
         $specialization = Specialization::where('hospital_id', auth()->user()->hospital_id)->get();
         return view('hospital_admin.doctor_form', [
-            'route'          => 'hospital_admin.doctor_add',
-            'title'          => 'Create doctor',
-            'button'         => 'Submit',
-            'specialization' => $specialization
+            'route'                   => 'hospital_admin.doctor_add',
+            'title'                   => 'Create doctor',
+            'button'                  => 'Submit',
+            'specialization'          => $specialization,
+            'doctorSpecializationIds' => [],
         ]);
     }
 
@@ -92,7 +106,7 @@ class Hospitaladmincontroller extends Controller
             'phone'            => 'required|string|max:20',
             'gender'           => 'required',
             'experience_years' => 'required|numeric',
-            'specialization'   => 'required',
+            'specialization'   => 'required|array|min:1',
             'qualification'    => 'required|string',
             'status'           => 'nullable',
             'profile_photo'    => 'nullable|image|max:2048',
@@ -126,6 +140,10 @@ class Hospitaladmincontroller extends Controller
                 $doctor->profile_photo = 'doctors/' . $filename;
             }
 
+            $specializationIds = is_array($validated['specialization'])
+                ? array_map('intval', $validated['specialization'])
+                : [(int) $validated['specialization']];
+
             $doctor->fill([
                 'name'              => $validated['name'],
                 'hospital_id'       => auth()->user()->hospital_id,
@@ -133,12 +151,20 @@ class Hospitaladmincontroller extends Controller
                 'doctor_code'       => $id ? $doctor->doctor_code : $this->doctorcode(),
                 'experience_years'  => $validated['experience_years'],
                 'phone'             => $validated['phone'],
-                'specialization_id' => $validated['specialization'],
+                'specialization_id' => $specializationIds[0],
                 'qualification'     => $validated['qualification'],
                 'consultation_fee'  => $validated['consultation_fee'] ?? 0,
             ]);
 
             $doctor->save();
+
+            // ── Sync multiple specializations ──────────────────────
+            try {
+                $doctor->specializations()->sync($specializationIds);
+            } catch (\Exception $e) {
+                // doctor_specializations table may not exist yet — run php artisan migrate
+                Log::channel('hospital_admin')->warning('Specialization sync skipped', ['error' => $e->getMessage()]);
+            }
 
             $user = User::where('doctor_id', $doctor->id)
                 ->where('hospital_id', auth()->user()->hospital_id)
@@ -229,12 +255,23 @@ class Hospitaladmincontroller extends Controller
             ->get()
             ->toArray();
 
+        $doctorSpecializationIds = DB::table('doctor_specializations')
+            ->where('doctor_id', $id)
+            ->pluck('specialization_id')
+            ->toArray();
+
+        // Fallback: if pivot is empty, use specialization_id column
+        if (empty($doctorSpecializationIds) && isset($data[0]->specialization_id)) {
+            $doctorSpecializationIds = [$data[0]->specialization_id];
+        }
+
         return view('hospital_admin.doctor_form', [
-            'title'          => 'Update doctor',
-            'route'          => 'hospital_admin.doctors_update',
-            'button'         => 'Update',
-            'specialization' => $specialization,
-            'data'           => (array) $data[0]
+            'title'                    => 'Update doctor',
+            'route'                    => 'hospital_admin.doctors_update',
+            'button'                   => 'Update',
+            'specialization'           => $specialization,
+            'data'                     => (array) $data[0],
+            'doctorSpecializationIds'  => $doctorSpecializationIds,
         ]);
     }
 
@@ -415,7 +452,7 @@ class Hospitaladmincontroller extends Controller
             'created_at'    => now(),
             'updated_at'    => now(),
         ]);
-        $this->createSpeedbotsContact($request->patient_phone, Auth::user()->hospital->id);
+        $this->createSpeedbotsContact($request->patient_phone, Auth::user()->hospital->id, $request->booking_date, $request->start_time, $actionToken);
         return back()->with('success', 'Booking created successfully');
     }
 
@@ -1370,45 +1407,140 @@ class Hospitaladmincontroller extends Controller
             ]);
         }
     }
-    private function createSpeedbotsContact(string $phone, int $hospitalId): void
-{
-    try {
-        $hospital = \App\Models\Hospital::find($hospitalId);
+    private function createSpeedbotsContact(string $phone, int $hospitalId, ?string $bookingDate = null, ?string $bookingTime = null, ?string $bookingCode = null): void
+    {
+        try {
+            $hospital = \App\Models\Hospital::find($hospitalId);
 
-        if (!$hospital || empty($hospital->token)) {
-            Log::channel('hospital_admin')->warning('Speedbots contact skipped: no token', [
-                'hospital_id' => $hospitalId,
+            if (!$hospital || empty($hospital->token)) {
+                Log::channel('hospital_admin')->warning('Speedbots contact skipped: no token', [
+                    'hospital_id' => $hospitalId,
+                ]);
+                return;
+            }
+
+            $cleanPhone = preg_replace('/[^0-9+]/', '', $phone);
+            if (empty($cleanPhone)) return;
+
+            $token = $hospital->token;
+
+            // ── CALL 1: Create contact (ignore if already exists) ──────
+            try {
+                Http::timeout(10)
+                    ->withoutVerifying()
+                    ->withHeaders([
+                        'X-ACCESS-TOKEN' => $token,
+                        'Content-Type'   => 'application/json',
+                        'accept'         => 'application/json',
+                    ])
+                    ->post('https://app.speedbots.io/api/contacts', [
+                        'phone' => $cleanPhone,
+                    ]);
+            } catch (\Exception $e) {
+                // Contact may already exist — continue to set custom fields
+                Log::channel('hospital_admin')->info('Speedbots contact create skipped (may exist)', [
+                    'phone' => $cleanPhone, 'error' => $e->getMessage(),
+                ]);
+            }
+
+
+
+
+
+            // ── CALL 2: Set appointment date custom field ────────
+            try {
+                $dateFieldId = $hospital->appointment_date_field_id ?? null;
+            } catch (\Exception $e) {
+                $dateFieldId = null;
+            }
+
+            if ($dateFieldId && $bookingDate) {
+                Http::timeout(10)
+                    ->withoutVerifying()
+                    ->withHeaders([
+                        'X-ACCESS-TOKEN' => $token,
+                        'Content-Type'   => 'application/x-www-form-urlencoded',
+                        'accept'         => 'application/json',
+                    ])
+                    ->asForm()
+                    ->post("https://app.speedbots.io/api/contacts/{$cleanPhone}/custom_fields/{$dateFieldId}", [
+                        'value' => $bookingDate,
+                    ]);
+
+                Log::channel('hospital_admin')->info('Speedbots date field set', [
+                    'phone'    => $cleanPhone,
+                    'field_id' => $dateFieldId,
+                    'value'    => $bookingDate,
+                ]);
+            }
+
+            // ── CALL 3: Set appointment time custom field ────────
+            try {
+                $timeFieldId = $hospital->appointment_time_field_id ?? null;
+            } catch (\Exception $e) {
+                $timeFieldId = null;
+            }
+
+            if ($timeFieldId && $bookingTime) {
+                try {
+                    $formattedTime = \Carbon\Carbon::createFromFormat('H:i:s', $bookingTime)->format('h:i A');
+                } catch (\Exception $e) {
+                    $formattedTime = $bookingTime;
+                }
+
+                Http::timeout(10)
+                    ->withoutVerifying()
+                    ->withHeaders([
+                        'X-ACCESS-TOKEN' => $token,
+                        'Content-Type'   => 'application/x-www-form-urlencoded',
+                        'accept'         => 'application/json',
+                    ])
+                    ->asForm()
+                    ->post("https://app.speedbots.io/api/contacts/{$cleanPhone}/custom_fields/{$timeFieldId}", [
+                        'value' => $formattedTime,
+                    ]);
+
+                Log::channel('hospital_admin')->info('Speedbots time field set', [
+                    'phone'    => $cleanPhone,
+                    'field_id' => $timeFieldId,
+                    'value'    => $formattedTime,
+                ]);
+            }
+
+            // ── CALL 4: Set booking code custom field ───────────
+            try {
+                $bookingCodeFieldId = $hospital->booking_code_field_id ?? null;
+            } catch (\Exception $e) {
+                $bookingCodeFieldId = null;
+            }
+
+            if ($bookingCodeFieldId && $bookingCode) {
+                Http::timeout(10)
+                    ->withoutVerifying()
+                    ->withHeaders([
+                        'X-ACCESS-TOKEN' => $token,
+                        'Content-Type'   => 'application/x-www-form-urlencoded',
+                        'accept'         => 'application/json',
+                    ])
+                    ->asForm()
+                    ->post("https://app.speedbots.io/api/contacts/{$cleanPhone}/custom_fields/{$bookingCodeFieldId}", [
+                        'value' => $bookingCode,
+                    ]);
+
+                Log::channel('hospital_admin')->info('Speedbots booking code field set', [
+                    'phone'    => $cleanPhone,
+                    'field_id' => $bookingCodeFieldId,
+                    'value'    => $bookingCode,
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::channel('hospital_admin')->error('Speedbots contact failed', [
+                'phone' => $phone,
+                'error' => $e->getMessage(),
             ]);
-            return;
         }
-
-        $cleanPhone = preg_replace('/[^0-9+]/', '', $phone);
-        if (empty($cleanPhone)) return;
-
-        $response = Http::timeout(10)
-            ->withoutVerifying() // SSL bypass for local dev (cURL error 60)
-            ->withHeaders([
-                'X-ACCESS-TOKEN' => $hospital->token,
-                'Content-Type'   => 'application/json',
-                'accept'         => 'application/json',
-            ])
-            ->post('https://app.speedbots.io/api/contacts', [
-                'phone' => $cleanPhone,
-            ]);
-
-        Log::channel('hospital_admin')->info('Speedbots contact created', [
-            'phone'    => $cleanPhone,
-            'status'   => $response->status(),
-            'response' => $response->json(),
-        ]);
-
-    } catch (\Exception $e) {
-        Log::channel('hospital_admin')->error('Speedbots contact failed', [
-            'phone' => $phone,
-            'error' => $e->getMessage(),
-        ]);
     }
-}
     public function calendar(Request $request)
 {
     $hospitalId = auth()->user()->hospital_id;
@@ -1501,19 +1633,25 @@ class Hospitaladmincontroller extends Controller
         }
 
         $request->validate([
-            'token'              => 'nullable|string|max:255',
-            'accept_flow_id'     => 'nullable|string|max:50',
-            'reject_flow_id'     => 'nullable|string|max:50',
-            'reschedule_flow_id' => 'nullable|string|max:50',
-            'datetime_field_id'  => 'nullable|string|max:50',
+            'token'                    => 'nullable|string|max:255',
+            'accept_flow_id'           => 'nullable|string|max:50',
+            'reject_flow_id'           => 'nullable|string|max:50',
+            'reschedule_flow_id'       => 'nullable|string|max:50',
+            'datetime_field_id'        => 'nullable|string|max:50',
+            'appointment_date_field_id'=> 'nullable|string|max:100',
+            'appointment_time_field_id'=> 'nullable|string|max:100',
+            'booking_code_field_id'    => 'nullable|string|max:100',
         ]);
 
         $hospital->update([
-            'token'              => $request->token,
-            'accept_flow_id'     => $request->accept_flow_id,
-            'reject_flow_id'     => $request->reject_flow_id,
-            'reschedule_flow_id' => $request->reschedule_flow_id,
-            'datetime_field_id'  => $request->datetime_field_id,
+            'token'                     => $request->token,
+            'accept_flow_id'            => $request->accept_flow_id,
+            'reject_flow_id'            => $request->reject_flow_id,
+            'reschedule_flow_id'        => $request->reschedule_flow_id,
+            'datetime_field_id'         => $request->datetime_field_id,
+            'appointment_date_field_id' => $request->appointment_date_field_id,
+            'appointment_time_field_id' => $request->appointment_time_field_id,
+            'booking_code_field_id'     => $request->booking_code_field_id,
         ]);
 
         Log::channel('hospital_admin')->info('Speedbots settings updated', [

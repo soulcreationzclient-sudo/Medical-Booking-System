@@ -115,19 +115,22 @@
                                 </div>
                             </div>
 
-                            {{-- Specialization --}}
+                            {{-- Specialization (multi-select) --}}
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold">Specialization</label>
-                                <select name="specialization"
-                                    class="form-control select2 @error('specialization') is-invalid @enderror">
-                                    <option value="">-- Select Specialization --</option>
+                                <label class="form-label fw-semibold">Specialization <span class="text-danger">*</span></label>
+                                <select name="specialization[]" multiple
+                                    class="form-control select2 @error('specialization') is-invalid @enderror"
+                                    style="height:auto">
                                     @foreach ($specialization as $list)
                                         <option value="{{ $list->id }}"
-                                            @selected(old('specialization', $data['specialization_id'] ?? '') == $list->id)>
+                                            @if(in_array($list->id, $doctorSpecializationIds ?? [$data['specialization_id'] ?? 0]))
+                                                selected
+                                            @endif>
                                             {{ $list->specialization }}
                                         </option>
                                     @endforeach
                                 </select>
+                                <small class="text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple</small>
                                 @error('specialization')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror

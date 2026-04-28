@@ -127,6 +127,61 @@
                             </div>
 
                         </div>
+
+                        <hr class="my-3">
+                        <p class="fw-semibold mb-1" style="font-size:13px;color:#374151;">📋 Appointment Custom Fields — set on contact creation</p>
+                        <small class="text-muted d-block mb-3">These fields are set when a new patient books an appointment. Use the custom field <strong>name</strong> (e.g. <code>appointment_date</code>) or the numeric field ID.</small>
+                        <div class="row g-3">
+
+                            {{-- Appointment Date Field --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <span class="badge me-1" style="background:#0891b2;color:#fff;">📅 Appointment Date</span>
+                                    Custom Field Name / ID
+                                </label>
+                                <input type="text" name="appointment_date_field_id"
+                                    class="form-control @error('appointment_date_field_id') is-invalid @enderror"
+                                    placeholder="e.g. appointment_date or 983376"
+                                    value="{{ old('appointment_date_field_id', $hospital->appointment_date_field_id ?? '') }}">
+                                <small class="text-muted">Stores the booking date when contact is created.</small>
+                                @error('appointment_date_field_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Appointment Time Field --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <span class="badge me-1" style="background:#0891b2;color:#fff;">🕐 Appointment Time</span>
+                                    Custom Field Name / ID
+                                </label>
+                                <input type="text" name="appointment_time_field_id"
+                                    class="form-control @error('appointment_time_field_id') is-invalid @enderror"
+                                    placeholder="e.g. appointment_time or 972343"
+                                    value="{{ old('appointment_time_field_id', $hospital->appointment_time_field_id ?? '') }}">
+                                <small class="text-muted">Stores the booking time (e.g. 10:30 AM) when contact is created.</small>
+                                @error('appointment_time_field_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Booking Code Field --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <span class="badge me-1" style="background:#dc2626;color:#fff;">🎫 Booking Code</span>
+                                    Custom Field Name / ID
+                                </label>
+                                <input type="text" name="booking_code_field_id"
+                                    class="form-control @error('booking_code_field_id') is-invalid @enderror"
+                                    placeholder="e.g. 188523"
+                                    value="{{ old('booking_code_field_id', $hospital->booking_code_field_id ?? '') }}">
+                                <small class="text-muted">Stores the booking code (e.g. BK-XK92MPLR) — used for cancellation via WhatsApp.</small>
+                                @error('booking_code_field_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                        </div>
                     </div>
                 </div>
 
