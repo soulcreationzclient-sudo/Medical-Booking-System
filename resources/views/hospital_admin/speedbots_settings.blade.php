@@ -110,6 +110,38 @@
                                 @enderror
                             </div>
 
+                            {{-- No Show Flow ID --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <span class="badge me-1" style="background:#6f42c1;color:#fff;">🚫 No Show</span>
+                                    Flow ID
+                                </label>
+                                <input type="text" name="no_show_flow_id"
+                                    class="form-control @error('no_show_flow_id') is-invalid @enderror"
+                                    placeholder="e.g. 1774503499001"
+                                    value="{{ old('no_show_flow_id', $hospital->no_show_flow_id ?? '') }}">
+                                <small class="text-muted">WhatsApp message sent when patient marked as No Show.</small>
+                                @error('no_show_flow_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Completed Flow ID --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <span class="badge me-1" style="background:#198754;color:#fff;">✅ Completed</span>
+                                    Flow ID
+                                </label>
+                                <input type="text" name="completed_flow_id"
+                                    class="form-control @error('completed_flow_id') is-invalid @enderror"
+                                    placeholder="e.g. 1774503500123"
+                                    value="{{ old('completed_flow_id', $hospital->completed_flow_id ?? '') }}">
+                                <small class="text-muted">WhatsApp message sent after appointment completed (feedback/follow-up).</small>
+                                @error('completed_flow_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
                             {{-- Reschedule DateTime Custom Field ID --}}
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">

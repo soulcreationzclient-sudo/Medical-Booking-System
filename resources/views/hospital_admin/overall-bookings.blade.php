@@ -909,28 +909,33 @@
 {{-- ✅ CHANGE 1: New prescription button style --}}
 .saas-dropdown-btn.rx       { background:#fef9c3; color:#854d0e; }
 
-.saas-actions-cell .saas-three-dot-btn,
 .saas-actions-cell .saas-dropdown-btns-wrap {
   display: none;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
-.saas-actions-cell:hover .saas-dropdown-btns-wrap {
+.saas-actions-cell.open .saas-dropdown-btns-wrap {
   display: flex !important;
 }
 
-.saas-actions-cell:hover .saas-three-dot-btn {
+.saas-actions-cell.open .saas-three-dot-btn {
   display: none !important;
 }
 
-.saas-actions-cell:not(:hover) .saas-three-dot-btn {
-  display: inline-block;
+.saas-three-dot-btn {
+  background: #f0f4ff;
+  border: 1px solid #c7d4f0;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 12px;
+  color: #1363C6;
+  font-weight: bold;
 }
 
-.saas-three-dot-btn {
-  background: none;
-  border: none;
-  font-size: 1.4rem;
-  cursor: pointer;
+.saas-three-dot-btn:hover {
+  background: #d6e4ff;
 }
 
 </style>
@@ -986,7 +991,7 @@
 </span>
 </td>
 
-<td class="saas-actions-cell" tabindex="0">
+<td class="saas-actions-cell" onclick="toggleActions(this)">
 
 <div class="saas-dropdown-btns-wrap saas-dropdown-actions-row">
 
@@ -1016,6 +1021,35 @@ Assign
 
 
 @if($booking->status === 'accepted')
+
+<button class="saas-dropdown-btn resched"
+onclick="openRescheduleModal({{ $booking->id }}, '{{ $booking->patient_name }}','{{ $booking->booking_date }}','{{ $booking->start_time }}')">
+Reschedule
+</button>
+
+<button class="saas-dropdown-btn noshow"
+onclick="updateStatus({{ $booking->id }}, 'no_show')">
+No Show
+</button>
+
+<button class="saas-dropdown-btn reject"
+onclick="updateStatus({{ $booking->id }}, 'rejected')">
+Reject
+</button>
+
+<button class="saas-dropdown-btn complete"
+onclick="updateStatus({{ $booking->id }}, 'completed')">
+Complete
+</button>
+
+<button class="saas-dropdown-btn resched"
+onclick="openAssignModal({{ $booking->id }}, '{{ $booking->patient_name }}')">
+Assign
+</button>
+
+@endif
+
+@if($booking->status === 'rescheduled')
 
 <button class="saas-dropdown-btn resched"
 onclick="openRescheduleModal({{ $booking->id }}, '{{ $booking->patient_name }}','{{ $booking->booking_date }}','{{ $booking->start_time }}')">
@@ -1167,6 +1201,21 @@ Assign
 </div>
 
 <script>
+// ── Toggle action buttons on click ───────────────────────
+function toggleActions(cell) {
+    const allCells = document.querySelectorAll('.saas-actions-cell');
+    allCells.forEach(c => {
+        if (c !== cell) c.classList.remove('open');
+    });
+    cell.classList.toggle('open');
+}
+
+// Close when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.saas-actions-cell')) {
+        document.querySelectorAll('.saas-actions-cell').forEach(c => c.classList.remove('open'));
+    }
+});
     let currentAssignBookingId = null;
 
 function openAssignModal(bookingId, patientName) {

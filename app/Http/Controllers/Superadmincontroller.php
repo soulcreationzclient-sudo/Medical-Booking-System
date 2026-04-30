@@ -141,12 +141,6 @@ class Superadmincontroller extends Controller
 
             if ($request->hasFile('hospital_logo')) {
 
-                // 1️⃣ Ensure directory exists
-                $dir = public_path('hospital_logos');
-                if (!is_dir($dir)) {
-                    mkdir($dir, 0755, true);
-                }
-
                 // 2️⃣ Delete old logo (if exists)
                 if (!empty($logoPath)) {
                     $oldPath = public_path($logoPath);

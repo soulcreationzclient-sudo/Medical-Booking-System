@@ -233,7 +233,11 @@
                     <div class="doctor-info">
                         <h3 class="doctor-name">{{ $doc->name }}</h3>
 
-                        <span class="specialization">{{ $doc->specialization }}</span>
+                        @foreach($doc->specializations ?? [$doc->specialization ?? ''] as $spec)
+                            @if($spec)
+                                <span class="specialization">{{ $spec }}</span>
+                            @endif
+                        @endforeach
 
                         <p class="qualification">{{ $doc->qualification }}</p>
 
@@ -242,7 +246,7 @@
                         </span>
 
                         <p class="description">
-                            {{ $doc->description }}
+                            {{ $doc->description ?? '' }}
                         </p>
                         <?php
                         $phone_no=$_GET['phone_no']??null;

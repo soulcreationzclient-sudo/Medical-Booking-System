@@ -382,16 +382,39 @@ class Hospitaladmincontroller extends Controller
             abort(404);
         }
 
-        $doctor = DB::table('doctors as d')
-            ->join('specializations as s', 'd.specialization_id', '=', 's.id')
+        $doctors = DB::table('doctors as d')
             ->join('users as u', 'u.doctor_id', '=', 'd.id')
             ->where('u.status', 1)
             ->where('d.hospital_id', $hospital->id)
-            ->select(
-                'd.id', 'd.name', 'd.qualification', 'd.profile_photo',
-                'd.experience_years', 's.specialization', 's.description'
-            )
+            ->select('d.id', 'd.name', 'd.qualification', 'd.profile_photo', 'd.experience_years')
             ->get();
+
+        // Load all specializations per doctor from pivot
+        foreach ($doctors as $doctor) {
+            try {
+                $specs = DB::table('doctor_specializations as ds')
+                    ->join('specializations as s', 's.id', '=', 'ds.specialization_id')
+                    ->where('ds.doctor_id', $doctor->id)
+                    ->pluck('s.specialization')
+                    ->toArray();
+            } catch (\Exception $e) {
+                $specs = [];
+            }
+
+            // Fallback to single specialization_id if pivot empty
+            if (empty($specs)) {
+                $spec = DB::table('specializations as s')
+                    ->join('doctors as d', 'd.specialization_id', '=', 's.id')
+                    ->where('d.id', $doctor->id)
+                    ->value('s.specialization');
+                $specs = $spec ? [$spec] : [];
+            }
+
+            $doctor->specializations = $specs; // array of all specialization names
+        }
+
+        // Use $doctor variable name for backward compat with view
+        $doctor = $doctors;
 
         return view('users.show_doctors', compact('doctor'));
     }
@@ -1241,7 +1264,7 @@ class Hospitaladmincontroller extends Controller
     private function sendSpeedbotsNotification(Booking $booking, string $oldStatus, string $newStatus, array $additionalData = [])
     {
         // Only send WhatsApp notification for accepted / rejected / rescheduled
-        if (!in_array($newStatus, ['accepted', 'rejected', 'rescheduled'])) {
+        if (!in_array($newStatus, ['accepted', 'rejected', 'rescheduled', 'no_show', 'completed'])) {
             return;
         }
 
@@ -1267,6 +1290,8 @@ class Hospitaladmincontroller extends Controller
                 'accepted'    => $hospital->accept_flow_id,
                 'rejected'    => $hospital->reject_flow_id,
                 'rescheduled' => $hospital->reschedule_flow_id,
+                'no_show'     => $hospital->no_show_flow_id   ?? null,
+                'completed'   => $hospital->completed_flow_id ?? null,
             ];
 
             $flowId = $flowMap[$newStatus] ?? null;
@@ -1637,6 +1662,8 @@ class Hospitaladmincontroller extends Controller
             'accept_flow_id'           => 'nullable|string|max:50',
             'reject_flow_id'           => 'nullable|string|max:50',
             'reschedule_flow_id'       => 'nullable|string|max:50',
+            'no_show_flow_id'          => 'nullable|string|max:50',
+            'completed_flow_id'        => 'nullable|string|max:50',
             'datetime_field_id'        => 'nullable|string|max:50',
             'appointment_date_field_id'=> 'nullable|string|max:100',
             'appointment_time_field_id'=> 'nullable|string|max:100',
@@ -1648,6 +1675,8 @@ class Hospitaladmincontroller extends Controller
             'accept_flow_id'            => $request->accept_flow_id,
             'reject_flow_id'            => $request->reject_flow_id,
             'reschedule_flow_id'        => $request->reschedule_flow_id,
+            'no_show_flow_id'           => $request->no_show_flow_id,
+            'completed_flow_id'         => $request->completed_flow_id,
             'datetime_field_id'         => $request->datetime_field_id,
             'appointment_date_field_id' => $request->appointment_date_field_id,
             'appointment_time_field_id' => $request->appointment_time_field_id,
